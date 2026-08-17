@@ -1,0 +1,95 @@
+import 'dart:io';
+
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+part 'database.g.dart';
+
+/// One row per practice session — meditation or either breathing technique.
+/// Both a natural completion and a manual mid-session stop insert a row
+/// here; `completedNaturally` is what distinguishes them. This is the
+/// source of truth the progress/motivation screens (streaks, heatmap,
+/// charts) read from — not a single running counter — since those need
+/// per-day, per-session detail, not just a total.
+class Sessions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// 'meditation' | 'box_breathing' | 'alt_nostril_breathing'
+  TextColumn get practiceType => text()();
+
+  DateTimeColumn get startedAt => dateTime()();
+  IntColumn get plannedSeconds => integer()();
+  IntColumn get actualSeconds => integer()();
+  BoolColumn get completedNaturally => boolean()();
+}
+
+/// One row per milestone the user has unlocked (see features/progress) —
+/// tracked separately from the session history itself so an unlock only
+/// ever celebrates once, no matter how many times the underlying criteria
+/// re-evaluates true.
+class UnlockedMilestones extends Table {
+  TextColumn get milestoneId => text()();
+  DateTimeColumn get unlockedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {milestoneId};
+}
+
+@DriftDatabase(tables: [Sessions, UnlockedMilestones])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
+
+  AppDatabase.forTesting(super.executor);
+
+  @override
+  int get schemaVersion => 1;
+
+  /// All sessions started on [day] (local time), most recent first — the
+  /// query the meditation/breathing screens' "today" state and the streak
+  /// calculation both build on.
+  Future<List<Session>> sessionsOnDay(DateTime day) {
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    return (select(sessions)
+          ..where((s) => s.startedAt.isBetweenValues(start, end))
+          ..orderBy([(s) => OrderingTerm.desc(s.startedAt)]))
+        .get();
+  }
+
+  /// Live view of every session, oldest first — the progress screen watches
+  /// this to recompute streaks/charts/milestones as soon as a session is
+  /// recorded, with no manual cache invalidation.
+  Stream<List<Session>> watchAllSessions() {
+    return (select(
+      sessions,
+    )..orderBy([(s) => OrderingTerm.asc(s.startedAt)])).watch();
+  }
+
+  Future<int> recordSession({
+    required String practiceType,
+    required DateTime startedAt,
+    required int plannedSeconds,
+    required int actualSeconds,
+    required bool completedNaturally,
+  }) {
+    return into(sessions).insert(
+      SessionsCompanion.insert(
+        practiceType: practiceType,
+        startedAt: startedAt,
+        plannedSeconds: plannedSeconds,
+        actualSeconds: actualSeconds,
+        completedNaturally: completedNaturally,
+      ),
+    );
+  }
+}
+
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dir.path, 'sadhana.sqlite'));
+    return NativeDatabase.createInBackground(file);
+  });
+}
