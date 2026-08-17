@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'audio/audio_service.dart';
 import 'persistence/database.dart';
 import 'persistence/prefs.dart';
 
@@ -16,3 +17,11 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 /// that need it (the meditation/breathing settings) watch this as an
 /// AsyncValue rather than the app gating its entire startup on it.
 final prefsProvider = FutureProvider<AppPrefs>((ref) => AppPrefs.load());
+
+/// One AudioService for the app's lifetime — shared by meditation and
+/// breathing, both of which play the same bell cue.
+final audioServiceProvider = Provider<AudioService>((ref) {
+  final service = AudioService();
+  ref.onDispose(service.dispose);
+  return service;
+});

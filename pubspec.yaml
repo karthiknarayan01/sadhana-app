@@ -25,6 +25,25 @@ dependencies:
   path: ^1.9.1
   shared_preferences: ^2.5.3
 
+  # Meditation/breathing: bell/gong playback, audio session category, and
+  # keeping the screen awake during an active practice.
+  just_audio: ^0.9.42
+  audio_session: ^0.1.25
+  wakelock_plus: ^1.2.10
+
+  # Breathing pacer + progress-screen polish (glow/fade/stagger).
+  flutter_animate: ^4.5.2
+
+  # timer_controller.dart reads the wall clock through clock.now() instead
+  # of DateTime.now() directly, specifically so tests can virtualize it
+  # (see fake_async below) instead of waiting on real seconds.
+  clock: ^1.1.2
+
+  # Progress screen: weekly/monthly practice-minutes chart, and a small
+  # celebratory burst the first time a milestone unlocks.
+  fl_chart: ^0.69.2
+  confetti: ^0.8.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -33,6 +52,10 @@ dev_dependencies:
   # drift's generated .g.dart files (table/query code) come from this.
   build_runner: ^2.4.15
   drift_dev: ^2.24.0
+
+  # Lets timer/breathing tests fast-forward Timer + clock.now() together
+  # deterministically, instead of real-time waits.
+  fake_async: ^1.3.3
 
 flutter:
   uses-material-design: true

@@ -84,6 +84,24 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
+
+  Future<Set<String>> unlockedMilestoneIds() async {
+    final rows = await select(unlockedMilestones).get();
+    return rows.map((r) => r.milestoneId).toSet();
+  }
+
+  /// Upsert rather than a plain insert — an unlock is idempotent by design
+  /// (see UnlockedMilestones' own docstring), so a caller that somehow
+  /// evaluates the same not-yet-unlocked milestone twice in quick
+  /// succession doesn't throw on the primary-key collision.
+  Future<void> unlockMilestone(String milestoneId, DateTime unlockedAt) {
+    return into(unlockedMilestones).insertOnConflictUpdate(
+      UnlockedMilestonesCompanion.insert(
+        milestoneId: milestoneId,
+        unlockedAt: unlockedAt,
+      ),
+    );
+  }
 }
 
 LazyDatabase _openConnection() {
