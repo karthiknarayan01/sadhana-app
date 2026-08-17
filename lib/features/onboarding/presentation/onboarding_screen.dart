@@ -38,28 +38,29 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'A few minutes a day, consistently, is what research keeps '
-                      'pointing to:',
+                      'Two respected studies help explain why:',
                       style: textTheme.titleMedium,
                     ),
                     const SizedBox(height: 16),
                     const _BenefitPoint(
                       icon: Icons.spa_outlined,
                       text:
-                          'Regular meditation practice has been linked to lower '
-                          'stress, better focus, and a greater sense of calm.',
+                          'A Johns Hopkins-led review of 47 clinical trials '
+                          '(3,515 people) found that about 8 weeks of daily '
+                          'mindfulness meditation eased anxiety and depression '
+                          'about as much as antidepressant medication does in '
+                          'some studies — with no harm found.',
+                      source: 'JAMA Internal Medicine, 2014',
                     ),
                     const _BenefitPoint(
                       icon: Icons.air,
                       text:
-                          'Slow, conscious breathing can activate the body\'s '
-                          'relaxation response within minutes.',
-                    ),
-                    const _BenefitPoint(
-                      icon: Icons.calendar_today_outlined,
-                      text:
-                          'Consistency matters more than duration — a few honest '
-                          'minutes each day, kept up over time, is what compounds.',
+                          'A Stanford study found that just 5 minutes of daily '
+                          'breathing practice — including box breathing, one '
+                          'of the two techniques here — measurably lifted mood '
+                          'and lowered stress within a month, with the effect '
+                          'building the more consistently people practiced.',
+                      source: 'Cell Reports Medicine, 2023',
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -100,23 +101,45 @@ class OnboardingScreen extends StatelessWidget {
 }
 
 class _BenefitPoint extends StatelessWidget {
-  const _BenefitPoint({required this.icon, required this.text});
+  const _BenefitPoint({
+    required this.icon,
+    required this.text,
+    required this.source,
+  });
 
   final IconData icon;
   final String text;
+
+  /// Shown in small, muted text under the claim — real research earns real
+  /// attribution, not just a confident-sounding sentence. See the
+  /// OnboardingScreen's own git history for how these two were verified.
+  final String source;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 22, color: scheme.primary),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(text, style: Theme.of(context).textTheme.bodyMedium),
+                const SizedBox(height: 2),
+                Text(
+                  source,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
