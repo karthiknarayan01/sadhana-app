@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../application/favorites_controller.dart';
 import '../application/preferred_script_controller.dart';
 import '../application/search_controller.dart';
 import '../application/search_state.dart';
@@ -16,7 +15,6 @@ class SearchScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(searchControllerProvider);
-    final favorites = ref.watch(favoritesControllerProvider);
     final preferredScript = ref.watch(preferredScriptControllerProvider);
 
     final availableLanguages = {
@@ -65,7 +63,6 @@ class SearchScreen extends ConsumerWidget {
               child: _ResultsArea(
                 state: state,
                 preferredScript: preferredScript,
-                favorites: favorites,
               ),
             ),
           ],
@@ -76,15 +73,10 @@ class SearchScreen extends ConsumerWidget {
 }
 
 class _ResultsArea extends StatelessWidget {
-  const _ResultsArea({
-    required this.state,
-    required this.preferredScript,
-    required this.favorites,
-  });
+  const _ResultsArea({required this.state, required this.preferredScript});
 
   final SearchState state;
   final String preferredScript;
-  final Set<String> favorites;
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +101,6 @@ class _ResultsArea extends StatelessWidget {
             return ResultCard(
               result: result,
               preferredScript: preferredScript,
-              isFavorite: favorites.contains(result.id),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ShlokaDetailScreen(result: result),

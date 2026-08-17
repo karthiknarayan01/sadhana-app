@@ -72,8 +72,7 @@ class OnboardingScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       'Sanskrit prayers and verses are included as a bonus for '
-                      'anyone curious to explore them — entirely optional, never '
-                      'required.',
+                      'anyone interested to explore.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
