@@ -35,13 +35,13 @@ class SearchScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Shloka Search',
+                    'Sanskrit Prayers',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     decoration: const InputDecoration(
-                      hintText: 'Search by name or content…',
+                      hintText: 'Search a prayer or verse by name or content…',
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(),
                     ),
@@ -137,7 +137,8 @@ class _EmptyPrompt extends StatelessWidget {
             Icon(Icons.auto_stories, size: 48, color: scheme.outline),
             const SizedBox(height: 12),
             Text(
-              'Search for a shloka or stotra by name or content',
+              'A bonus collection of Sanskrit prayers, verses, and hymns — '
+              'search by name or content',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: scheme.outline),

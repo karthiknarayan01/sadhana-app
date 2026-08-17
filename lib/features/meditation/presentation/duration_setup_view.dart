@@ -45,7 +45,8 @@ class _DurationSetupViewState extends ConsumerState<DurationSetupView> {
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
-            const BenefitLink(practiceType: 'meditation'),
+            const SizedBox(height: 16),
+            const BenefitCard(practiceType: 'meditation'),
             const SizedBox(height: 24),
             Text(
               '$minutes min',

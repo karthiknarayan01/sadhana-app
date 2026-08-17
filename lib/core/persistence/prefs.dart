@@ -17,6 +17,7 @@ class AppPrefs {
   static const _keyLastMeditationSeconds = 'last_meditation_seconds';
   static const _keyFavoriteShlokaIds = 'favorite_shloka_ids';
   static const _keyPreferredScript = 'preferred_script';
+  static const _keyHasSeenOnboarding = 'has_seen_onboarding';
 
   bool get soundMuted => _prefs.getBool(_keySoundMuted) ?? false;
   Future<void> setSoundMuted(bool value) =>
@@ -41,4 +42,8 @@ class AppPrefs {
       _prefs.getString(_keyPreferredScript) ?? 'devanagari';
   Future<void> setPreferredScript(String script) =>
       _prefs.setString(_keyPreferredScript, script);
+
+  bool get hasSeenOnboarding => _prefs.getBool(_keyHasSeenOnboarding) ?? false;
+  Future<void> setHasSeenOnboarding(bool value) =>
+      _prefs.setBool(_keyHasSeenOnboarding, value);
 }

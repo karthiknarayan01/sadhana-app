@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:sadhana/app.dart';
 import 'package:sadhana/core/persistence/database.dart';
@@ -13,6 +14,10 @@ void main() {
   testWidgets('root shell shows all four destinations and switches tabs', (
     WidgetTester tester,
   ) async {
+    // Onboarding is a separate, dedicated test (see onboarding_test.dart) —
+    // this test is about tab navigation, so skip straight past it.
+    SharedPreferences.setMockInitialValues({'has_seen_onboarding': true});
+
     // The Progress tab watches the database as soon as it's built (all four
     // tabs are built eagerly by RootShell's IndexedStack). The real
     // AppDatabase opens a background isolate via path_provider, which has no
@@ -53,10 +58,9 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.search));
     await tester.pumpAndSettle();
-    // "Shloka Search" also appears twice — the "Shlokas" nav label is a
-    // different string, but the screen heading and search field are both
-    // present once settled.
-    expect(find.text('Shloka Search'), findsOneWidget);
+    // "Sanskrit Prayers" is the screen's own heading — "Prayers" (the nav
+    // label) is a different, shorter string, so this stays findsOneWidget.
+    expect(find.text('Sanskrit Prayers'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
   });
 }

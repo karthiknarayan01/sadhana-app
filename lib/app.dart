@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/breathing/presentation/breathing_home_screen.dart';
 import 'features/meditation/presentation/meditation_home_screen.dart';
+import 'features/onboarding/presentation/onboarding_screen.dart';
 import 'features/progress/presentation/progress_screen.dart';
 import 'features/search/presentation/search_screen.dart';
 
@@ -16,7 +19,46 @@ class SadhanaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      home: const RootShell(),
+      home: const _AppRoot(),
+    );
+  }
+}
+
+/// Gates the very first screen a fresh install ever sees — the onboarding
+/// message (see OnboardingScreen) — behind AppPrefs.hasSeenOnboarding, then
+/// always goes straight to RootShell after that. `_dismissed` is local
+/// state rather than re-reading prefsProvider after "Begin" is tapped, so
+/// the transition is instant instead of waiting on another SharedPreferences
+/// round trip.
+class _AppRoot extends ConsumerStatefulWidget {
+  const _AppRoot();
+
+  @override
+  ConsumerState<_AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends ConsumerState<_AppRoot> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final prefsAsync = ref.watch(prefsProvider);
+
+    return prefsAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => const RootShell(),
+      data: (prefs) {
+        if (_dismissed || prefs.hasSeenOnboarding) {
+          return const RootShell();
+        }
+        return OnboardingScreen(
+          onFinished: () {
+            prefs.setHasSeenOnboarding(true);
+            setState(() => _dismissed = true);
+          },
+        );
+      },
     );
   }
 }
@@ -55,7 +97,7 @@ class _RootShellState extends State<RootShell> {
           ),
           NavigationDestination(icon: Icon(Icons.air), label: 'Breathe'),
           NavigationDestination(icon: Icon(Icons.insights), label: 'Progress'),
-          NavigationDestination(icon: Icon(Icons.search), label: 'Shlokas'),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Prayers'),
         ],
       ),
     );

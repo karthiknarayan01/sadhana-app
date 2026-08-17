@@ -82,7 +82,9 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
           'Equal inhale, hold, exhale, hold — a true box.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        const BenefitLink(practiceType: BreathingPattern.boxBreathingType),
+        const SizedBox(height: 12),
+        const BenefitCard(practiceType: BreathingPattern.boxBreathingType),
+        const SizedBox(height: 12),
         _SecondsStepper(
           label: 'Seconds per side',
           value: _boxSeconds,
@@ -106,7 +108,9 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
           'Adjust to your comfort — defaults are a gentle starting point.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        const BenefitLink(practiceType: BreathingPattern.alternateNostrilType),
+        const SizedBox(height: 12),
+        const BenefitCard(practiceType: BreathingPattern.alternateNostrilType),
+        const SizedBox(height: 12),
         _SecondsStepper(
           label: 'Inhale',
           value: _inhaleSeconds,

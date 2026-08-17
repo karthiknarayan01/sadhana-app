@@ -57,19 +57,49 @@ Future<void> showBenefitSheet(BuildContext context, String practiceType) {
   );
 }
 
-/// Compact inline widget for a "Why this practice?" trigger — used on the
-/// meditation/breathing setup screens.
-class BenefitLink extends StatelessWidget {
-  const BenefitLink({super.key, required this.practiceType});
+/// The tagline is shown ambiently, right on the setup screen — no click
+/// needed to see it. Tapping the card is still an option for anyone who
+/// wants the full "why bother" copy, but seeing *some* benefit up front is
+/// no longer gated behind a button (previously a small "Why this practice?"
+/// link with an (i) icon, which read as an alert rather than an invitation).
+class BenefitCard extends StatelessWidget {
+  const BenefitCard({super.key, required this.practiceType});
 
   final String practiceType;
 
   @override
   Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: () => showBenefitSheet(context, practiceType),
-      icon: const Icon(Icons.info_outline, size: 16),
-      label: const Text('Why this practice?'),
+    final content = benefitContent[practiceType];
+    if (content == null) return const SizedBox.shrink();
+
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.primaryContainer.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => showBenefitSheet(context, practiceType),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(Icons.self_improvement, size: 20, color: scheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  content.tagline,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

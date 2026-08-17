@@ -7,6 +7,7 @@ import '../application/progress_providers.dart';
 import 'heatmap_grid.dart';
 import 'milestone_grid.dart';
 import 'weekly_chart.dart';
+import 'wellbeing_chart.dart';
 
 /// The app's motivation hub — leads with today's streak (the daily-return
 /// hook), then a heatmap, a weekly-minutes chart, milestones, and quick
@@ -65,6 +66,22 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                   _StreakHeader(
                     currentStreak: stats.currentStreak,
                     longestStreak: stats.longestStreak,
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    'Wellbeing trend',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  WellbeingChart(currentStreak: stats.currentStreak),
+                  const SizedBox(height: 8),
+                  Text(
+                    'An illustrative curve based on general research on '
+                    'consistent practice — not a personal measurement. This '
+                    'app doesn\'t track mood; it tracks that you showed up.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   Text(
