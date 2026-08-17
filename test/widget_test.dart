@@ -7,6 +7,8 @@ import 'package:sadhana/app.dart';
 import 'package:sadhana/core/persistence/database.dart';
 import 'package:sadhana/core/providers.dart';
 
+import 'fakes/fake_search_api.dart';
+
 void main() {
   testWidgets('root shell shows all four destinations and switches tabs', (
     WidgetTester tester,
@@ -21,7 +23,12 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [databaseProvider.overrideWithValue(db)],
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          // The Search tab is also built eagerly — swap in a fake so this
+          // smoke test never attempts a real network call.
+          searchApiProvider.overrideWithValue(FakeSearchApi()),
+        ],
         child: const SadhanaApp(),
       ),
     );
@@ -46,6 +53,10 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.search));
     await tester.pumpAndSettle();
-    expect(find.text('Shloka search — coming soon'), findsOneWidget);
+    // "Shloka Search" also appears twice — the "Shlokas" nav label is a
+    // different string, but the screen heading and search field are both
+    // present once settled.
+    expect(find.text('Shloka Search'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
   });
 }

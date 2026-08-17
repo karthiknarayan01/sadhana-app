@@ -44,6 +44,14 @@ dependencies:
   fl_chart: ^0.69.2
   confetti: ^0.8.0
 
+  # Shloka search: HTTP client for the backend's /search endpoint, real
+  # Devanagari type (Noto Sans Devanagari) paired with a serif for
+  # translated text, a loading skeleton, and plain-text sharing.
+  dio: ^5.7.0
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
+  share_plus: ^10.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

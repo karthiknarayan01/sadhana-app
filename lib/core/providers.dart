@@ -1,6 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/search/data/search_api.dart';
 import 'audio/audio_service.dart';
+import 'config/app_config.dart';
 import 'persistence/database.dart';
 import 'persistence/prefs.dart';
 
@@ -24,4 +27,8 @@ final audioServiceProvider = Provider<AudioService>((ref) {
   final service = AudioService();
   ref.onDispose(service.dispose);
   return service;
+});
+
+final searchApiProvider = Provider<SearchApi>((ref) {
+  return DioSearchApi(Dio(BaseOptions(baseUrl: searchApiBaseUrl)));
 });
