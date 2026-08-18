@@ -69,31 +69,10 @@ class _ShlokaDetailScreenState extends ConsumerState<ShlokaDetailScreen> {
                 tag: 'shloka-${result.id}',
                 child: Material(
                   type: MaterialType.transparency,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          result.category,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(color: scheme.onSecondaryContainer),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        result.nameIn(preferredScript),
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  child: Text(
+                    result.nameIn(preferredScript),
+                    style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

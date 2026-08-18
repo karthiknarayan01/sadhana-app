@@ -32,28 +32,28 @@ class ResultCard extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Hero(
-            tag: 'shloka-${result.id}',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HighlightText(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Hero(
+                tag: 'shloka-${result.id}',
+                child: HighlightText(
                   nameHighlight,
                   style: Theme.of(context).textTheme.titleMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 6),
-                HighlightText(
-                  contentHighlight,
-                  style: preferredScript == 'devanagari'
-                      ? GoogleFonts.notoSansDevanagari(fontSize: 15)
-                      : Theme.of(context).textTheme.bodyMedium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 6),
+              HighlightText(
+                contentHighlight,
+                style: preferredScript == 'devanagari'
+                    ? GoogleFonts.notoSansDevanagari(fontSize: 15)
+                    : Theme.of(context).textTheme.bodyMedium,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
