@@ -22,6 +22,7 @@ final breathingControllerProvider =
 /// never a fixed target to fall short of).
 class BreathingController extends Notifier<BreathingState> {
   Timer? _ticker;
+  Timer? _warmupTicker;
 
   @override
   BreathingState build() {
@@ -39,7 +40,7 @@ class BreathingController extends Notifier<BreathingState> {
     ref.read(prefsProvider.future).then((p) => p.setSoundMuted(newMuted));
   }
 
-  void startBoxBreathing(int seconds) => _start(
+  void startBoxBreathing(int seconds) => _startWarmup(
     BreathingPattern.box(BreathingCycleLogic.clampPhaseSeconds(seconds)),
   );
 
@@ -47,7 +48,7 @@ class BreathingController extends Notifier<BreathingState> {
     required int inhaleSeconds,
     required int holdSeconds,
     required int exhaleSeconds,
-  }) => _start(
+  }) => _startWarmup(
     BreathingPattern.alternateNostril(
       inhaleSeconds: BreathingCycleLogic.clampPhaseSeconds(inhaleSeconds),
       holdSeconds: BreathingCycleLogic.clampPhaseSeconds(holdSeconds),
@@ -55,11 +56,45 @@ class BreathingController extends Notifier<BreathingState> {
     ),
   );
 
-  void _start(BreathingPattern pattern) {
+  /// Starts the warmup countdown, not the practice itself — the gong at
+  /// the end of warmup (see _onWarmupTick) is what actually marks practice
+  /// beginning, matching the same cue used by meditation's warmup.
+  void _startWarmup(BreathingPattern pattern) {
     state = BreathingState.initial(
       pattern: pattern,
       muted: state.muted,
-    ).copyWith(sessionPhase: BreathingSessionPhase.running);
+    ).copyWith(sessionPhase: BreathingSessionPhase.warmup);
+    _warmupTicker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _onWarmupTick(),
+    );
+  }
+
+  @visibleForTesting
+  Future<void> onWarmupTickForTesting() => _onWarmupTick();
+
+  Future<void> _onWarmupTick() async {
+    final remaining = state.warmupSecondsRemaining - 1;
+    if (remaining <= 0) {
+      _warmupTicker?.cancel();
+      _warmupTicker = null;
+      await ref.read(audioServiceProvider).playGong(muted: state.muted);
+      _beginPractice();
+      return;
+    }
+    state = state.copyWith(warmupSecondsRemaining: remaining);
+  }
+
+  /// Cancelling during warmup returns to idle without recording anything —
+  /// practice hasn't actually begun yet, unlike [stop] once it has.
+  void cancelWarmup() {
+    _warmupTicker?.cancel();
+    _warmupTicker = null;
+    state = BreathingState.initial(pattern: state.pattern, muted: state.muted);
+  }
+
+  void _beginPractice() {
+    state = state.copyWith(sessionPhase: BreathingSessionPhase.running);
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
   }
 
@@ -109,5 +144,7 @@ class BreathingController extends Notifier<BreathingState> {
   void _cancelTicker() {
     _ticker?.cancel();
     _ticker = null;
+    _warmupTicker?.cancel();
+    _warmupTicker = null;
   }
 }

@@ -7,9 +7,12 @@ import 'package:sadhana/core/providers.dart';
 import 'package:sadhana/features/breathing/application/breathing_controller.dart';
 import 'package:sadhana/features/breathing/application/breathing_state.dart';
 import 'package:sadhana/features/breathing/domain/breathing_pattern.dart';
+import 'package:sadhana/shared/practice_warmup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../fakes/fake_audio_service.dart';
+
+const _warmup = Duration(seconds: practiceWarmupSeconds);
 
 void main() {
   late AppDatabase db;
@@ -34,25 +37,55 @@ void main() {
     db.close();
   });
 
-  test('starting box breathing enters the running phase', () {
-    final notifier = container.read(breathingControllerProvider.notifier);
-    notifier.startBoxBreathing(4);
+  test('starting box breathing enters a 10s warmup before running', () {
+    fakeAsync((async) {
+      final notifier = container.read(breathingControllerProvider.notifier);
+      notifier.startBoxBreathing(4);
 
-    final state = container.read(breathingControllerProvider);
-    expect(state.sessionPhase, BreathingSessionPhase.running);
-    expect(state.pattern.practiceType, BreathingPattern.boxBreathingType);
+      expect(
+        container.read(breathingControllerProvider).sessionPhase,
+        BreathingSessionPhase.warmup,
+      );
+      expect(audio.gongPlayCount, 0);
+
+      async.elapse(_warmup);
+      // The gong marks warmup ending and practice actually starting.
+      expect(audio.gongPlayCount, 1);
+      final state = container.read(breathingControllerProvider);
+      expect(state.sessionPhase, BreathingSessionPhase.running);
+      expect(state.pattern.practiceType, BreathingPattern.boxBreathingType);
+    });
+  });
+
+  test('cancelWarmup returns to idle without recording anything', () {
+    fakeAsync((async) {
+      final notifier = container.read(breathingControllerProvider.notifier);
+      notifier.startBoxBreathing(4);
+
+      async.elapse(const Duration(seconds: 3));
+      notifier.cancelWarmup();
+      async.elapse(_warmup);
+
+      expect(audio.gongPlayCount, 0);
+      expect(
+        container.read(breathingControllerProvider).sessionPhase,
+        BreathingSessionPhase.idle,
+      );
+    });
   });
 
   test('a cue plays on every phase change, and cycles are counted', () {
     fakeAsync((async) {
       final notifier = container.read(breathingControllerProvider.notifier);
       notifier.startBoxBreathing(2); // 4 phases * 2s = 8s per cycle
+      async.elapse(_warmup); // through warmup, into running
 
       async.elapse(const Duration(seconds: 16)); // exactly 2 full cycles
 
       final state = container.read(breathingControllerProvider);
       expect(state.completedCycles, 2);
-      // A cue on every phase boundary: 4 phases/cycle * 2 cycles = 8.
+      // A cue on every phase boundary: 4 phases/cycle * 2 cycles = 8. The
+      // warmup's own gong is tracked separately (gongPlayCount), not here.
       expect(audio.bellPlayCount, 8);
     });
   });
@@ -65,6 +98,7 @@ void main() {
         holdSeconds: 2,
         exhaleSeconds: 2,
       );
+      async.elapse(_warmup);
 
       expect(
         container.read(breathingControllerProvider).currentPhase.nostril,
@@ -109,15 +143,17 @@ void main() {
     );
   });
 
-  test('toggleMuted suppresses the phase-change cue', () {
+  test('toggleMuted suppresses the phase-change cue and the warmup gong', () {
     fakeAsync((async) {
       final notifier = container.read(breathingControllerProvider.notifier);
       notifier.toggleMuted();
       notifier.startBoxBreathing(2);
+      async.elapse(_warmup);
 
       async.elapse(const Duration(seconds: 8));
 
       expect(audio.bellPlayCount, 0);
+      expect(audio.gongPlayCount, 0);
     });
   });
 }

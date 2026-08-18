@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../core/providers.dart';
+import '../../../shared/practice_warmup.dart';
 import '../domain/meditation_timer_logic.dart';
 import 'meditation_state.dart';
 
@@ -34,6 +35,7 @@ final timerControllerProvider =
 /// test/features/meditation/timer_controller_test.dart.
 class TimerController extends Notifier<MeditationState> {
   Timer? _ticker;
+  Timer? _warmupTicker;
   DateTime? _startedAt;
   int _lastElapsedSeconds = 0;
 
@@ -61,7 +63,47 @@ class TimerController extends Notifier<MeditationState> {
     ref.read(prefsProvider.future).then((p) => p.setSoundMuted(newMuted));
   }
 
+  /// Starts the warmup countdown, not the practice itself — the gong at
+  /// the end of warmup (see _onWarmupTick) is what actually marks practice
+  /// beginning, matching the same cue used by breathing's warmup.
   void start() {
+    state = state.copyWith(
+      phase: MeditationPhase.warmup,
+      warmupSecondsRemaining: practiceWarmupSeconds,
+    );
+    _warmupTicker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _onWarmupTick(),
+    );
+  }
+
+  @visibleForTesting
+  Future<void> onWarmupTickForTesting() => _onWarmupTick();
+
+  Future<void> _onWarmupTick() async {
+    final remaining = state.warmupSecondsRemaining - 1;
+    if (remaining <= 0) {
+      _warmupTicker?.cancel();
+      _warmupTicker = null;
+      await ref.read(audioServiceProvider).playGong(muted: state.muted);
+      _beginPractice();
+      return;
+    }
+    state = state.copyWith(warmupSecondsRemaining: remaining);
+  }
+
+  /// Cancelling during warmup returns to setup without recording anything —
+  /// practice hasn't actually begun yet, unlike [stop] once it has.
+  void cancelWarmup() {
+    _warmupTicker?.cancel();
+    _warmupTicker = null;
+    state = state.copyWith(
+      phase: MeditationPhase.setup,
+      warmupSecondsRemaining: practiceWarmupSeconds,
+    );
+  }
+
+  void _beginPractice() {
     _startedAt = clock.now();
     _lastElapsedSeconds = 0;
     state = state.copyWith(phase: MeditationPhase.running, elapsedSeconds: 0);
@@ -74,7 +116,8 @@ class TimerController extends Notifier<MeditationState> {
 
   /// Exposed for tests that want to drive one tick directly rather than
   /// going through the real Timer — production code never calls this
-  /// itself, [start] wires _onTick to a real Timer.periodic instead.
+  /// itself, [_beginPractice] wires _onTick to a real Timer.periodic
+  /// instead.
   @visibleForTesting
   Future<void> onTickForTesting() => _onTick();
 
@@ -148,5 +191,7 @@ class TimerController extends Notifier<MeditationState> {
   void _cancelTicker() {
     _ticker?.cancel();
     _ticker = null;
+    _warmupTicker?.cancel();
+    _warmupTicker = null;
   }
 }
