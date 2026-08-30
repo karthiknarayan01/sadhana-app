@@ -44,11 +44,12 @@ dependencies:
   fl_chart: ^0.69.2
   confetti: ^0.8.0
 
-  # Shloka search: HTTP client for the backend's /search endpoint, real
-  # Devanagari type (Noto Sans Devanagari) paired with a serif for
-  # translated text, a loading skeleton, and plain-text sharing.
+  # Shloka search: HTTP client for the backend's /search endpoint, a loading
+  # skeleton, and plain-text sharing. Devanagari/serif reading type is
+  # bundled locally (see flutter.fonts below), not google_fonts' default
+  # runtime CDN fetch — the reader is the app's main content, so its font
+  # can't wait on a network round-trip on first view.
   dio: ^5.7.0
-  google_fonts: ^6.2.1
   shimmer: ^3.0.0
   share_plus: ^10.1.4
 
@@ -77,6 +78,33 @@ flutter:
     - assets/audio/
     - assets/content/
     - assets/icon/
+
+  # Bundled locally rather than fetched from Google's CDN at runtime (the
+  # google_fonts package's default) — the shloka reader is the app's core
+  # content, so its font must be available instantly, not after a network
+  # round-trip flashes the fallback font first. See ATTRIBUTION.md.
+  fonts:
+    - family: NotoSansDevanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather-Regular.ttf
+        - asset: assets/fonts/Merriweather-Italic.ttf
+          style: italic
+    # Flutter web fetches Roboto from Google's CDN by default when it isn't
+    # bundled (it's Material's default typeface, used app-wide) — the same
+    # first-paint network dependency as the two above, just app-wide rather
+    # than reader-only. Weights 400/500/700 cover Material 3's typography
+    # scale (regular body text, M3's medium-weight titles/labels, and
+    # anything explicitly set to FontWeight.bold).
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   image_path: assets/icon/icon.png

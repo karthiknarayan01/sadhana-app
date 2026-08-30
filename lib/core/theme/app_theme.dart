@@ -14,7 +14,11 @@ class AppTheme {
       seedColor: _seed,
       brightness: Brightness.light,
     );
-    return ThemeData(useMaterial3: true, colorScheme: scheme);
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      fontFamily: 'Roboto',
+    );
   }
 
   static ThemeData dark() {
@@ -22,6 +26,10 @@ class AppTheme {
       seedColor: _seed,
       brightness: Brightness.dark,
     );
-    return ThemeData(useMaterial3: true, colorScheme: scheme);
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      fontFamily: 'Roboto',
+    );
   }
 }

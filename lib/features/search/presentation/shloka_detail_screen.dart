@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart' show Share;
 
 import '../application/favorites_controller.dart';
@@ -81,11 +80,13 @@ class _ShlokaDetailScreenState extends ConsumerState<ShlokaDetailScreen> {
                     child: Text(
                       scriptText,
                       style: usingDevanagari
-                          ? GoogleFonts.notoSansDevanagari(
+                          ? const TextStyle(
+                              fontFamily: 'NotoSansDevanagari',
                               fontSize: 22,
                               height: 1.8,
                             )
-                          : GoogleFonts.merriweather(
+                          : const TextStyle(
+                              fontFamily: 'Merriweather',
                               fontSize: 17,
                               height: 1.7,
                               fontStyle: FontStyle.italic,
@@ -127,7 +128,8 @@ class _ShlokaDetailScreenState extends ConsumerState<ShlokaDetailScreen> {
                           const SizedBox(height: 8),
                           Text(
                             meaning,
-                            style: GoogleFonts.merriweather(
+                            style: const TextStyle(
+                              fontFamily: 'Merriweather',
                               fontSize: 15,
                               height: 1.6,
                             ),

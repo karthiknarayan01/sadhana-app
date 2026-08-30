@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../domain/shloka_result.dart';
 import 'highlight_text.dart';
@@ -48,7 +47,10 @@ class ResultCard extends StatelessWidget {
               HighlightText(
                 contentHighlight,
                 style: preferredScript == 'devanagari'
-                    ? GoogleFonts.notoSansDevanagari(fontSize: 15)
+                    ? const TextStyle(
+                        fontFamily: 'NotoSansDevanagari',
+                        fontSize: 15,
+                      )
                     : Theme.of(context).textTheme.bodyMedium,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
