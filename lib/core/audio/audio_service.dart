@@ -46,8 +46,7 @@ class AudioService {
     await configure();
     if (!_ready) return;
     try {
-      await _bellPlayer.seek(Duration.zero);
-      unawaited(_bellPlayer.play());
+      await _restartFromZero(_bellPlayer);
     } catch (error, stackTrace) {
       developer.log(
         'AudioService.playBell failed',
@@ -63,8 +62,7 @@ class AudioService {
     await configure();
     if (!_ready) return;
     try {
-      await _gongPlayer.seek(Duration.zero);
-      unawaited(_gongPlayer.play());
+      await _restartFromZero(_gongPlayer);
     } catch (error, stackTrace) {
       developer.log(
         'AudioService.playGong failed',
@@ -73,6 +71,22 @@ class AudioService {
         name: 'AudioService',
       );
     }
+  }
+
+  /// just_audio's play() is a no-op — silently, no exception — if the
+  /// player is already `playing` (see AudioPlayer.play()'s `if (playing)
+  /// return;`), and seek() alone doesn't stop playback. So re-triggering a
+  /// cue before the previous play finished (routine for breathing, whose
+  /// phases can be as short as 2s while basu_bell.mp3 runs longer than
+  /// that) would otherwise silently fail to restart, sounding like the
+  /// bell "stopped working" after the first ring or two. pause() (not
+  /// stop(), which tears down decoders) forces playing back to false first
+  /// — a no-op itself if already stopped — so the play() after it actually
+  /// takes effect every time.
+  Future<void> _restartFromZero(AudioPlayer player) async {
+    await player.pause();
+    await player.seek(Duration.zero);
+    unawaited(player.play());
   }
 
   Future<void> dispose() async {
