@@ -8,8 +8,17 @@ class SearchUnavailableException implements Exception {
   const SearchUnavailableException();
 }
 
+/// hasMore tells the caller whether it's worth asking for the next page —
+/// page *size* is never something this client controls, only which page.
+class SearchPage {
+  const SearchPage({required this.results, required this.hasMore});
+
+  final List<ShlokaResult> results;
+  final bool hasMore;
+}
+
 abstract class SearchApi {
-  Future<List<ShlokaResult>> search(String query);
+  Future<SearchPage> search(String query, {int page = 0});
 }
 
 class DioSearchApi implements SearchApi {
@@ -18,16 +27,19 @@ class DioSearchApi implements SearchApi {
   final Dio _dio;
 
   @override
-  Future<List<ShlokaResult>> search(String query) async {
+  Future<SearchPage> search(String query, {int page = 0}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/search',
-        queryParameters: {'q': query},
+        queryParameters: {'q': query, 'page': page},
       );
       final results = response.data?['results'] as List? ?? const [];
-      return results
-          .map((r) => ShlokaResult.fromJson(r as Map<String, dynamic>))
-          .toList();
+      return SearchPage(
+        results: results
+            .map((r) => ShlokaResult.fromJson(r as Map<String, dynamic>))
+            .toList(),
+        hasMore: response.data?['has_more'] as bool? ?? false,
+      );
     } on DioException catch (error, stackTrace) {
       developer.log(
         'Shloka search failed',

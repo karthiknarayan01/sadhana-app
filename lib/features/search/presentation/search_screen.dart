@@ -72,14 +72,47 @@ class SearchScreen extends ConsumerWidget {
   }
 }
 
-class _ResultsArea extends StatelessWidget {
+class _ResultsArea extends ConsumerStatefulWidget {
   const _ResultsArea({required this.state, required this.preferredScript});
 
   final SearchState state;
   final String preferredScript;
 
   @override
+  ConsumerState<_ResultsArea> createState() => _ResultsAreaState();
+}
+
+class _ResultsAreaState extends ConsumerState<_ResultsArea> {
+  final _scrollController = ScrollController();
+
+  // Fetch the next page a bit before the user actually hits the bottom, so
+  // it's ready by the time they get there instead of after.
+  static const _loadMoreThreshold = 400.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
+      ref.read(searchControllerProvider.notifier).loadMore();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
     switch (state.status) {
       case SearchStatus.idle:
         return state.query.trim().isEmpty
@@ -93,14 +126,28 @@ class _ResultsArea extends StatelessWidget {
         if (state.results.isEmpty) {
           return const _NoMatches();
         }
+        final itemCount = state.results.length + (state.isLoadingMore ? 1 : 0);
         return ListView.builder(
+          controller: _scrollController,
           padding: const EdgeInsets.only(top: 6, bottom: 24),
-          itemCount: state.results.length,
+          itemCount: itemCount,
           itemBuilder: (context, index) {
+            if (index >= state.results.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                ),
+              );
+            }
             final result = state.results[index];
             return ResultCard(
               result: result,
-              preferredScript: preferredScript,
+              preferredScript: widget.preferredScript,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ShlokaDetailScreen(result: result),
