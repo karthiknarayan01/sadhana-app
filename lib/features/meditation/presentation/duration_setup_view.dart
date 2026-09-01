@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
+import '../../../shared/widgets/practice_medallion.dart';
 import '../../benefits/presentation/benefit_sheet.dart';
 import '../application/timer_controller.dart';
 import '../domain/meditation_timer_logic.dart';
@@ -32,26 +34,47 @@ class _DurationSetupViewState extends ConsumerState<DurationSetupView> {
     final controller = ref.read(timerControllerProvider.notifier);
     final minutes = (state.plannedSeconds / 60).round();
 
+    final scheme = Theme.of(context).colorScheme;
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Meditate', style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 8),
+            PracticeMedallion(
+              icon: Icons.self_improvement,
+              color: scheme.primary,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Meditate',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
+            const SizedBox(height: 6),
             Text(
               'A quiet $minutes-minute practice.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
-            ),
+            ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
             const SizedBox(height: 16),
-            const BenefitCard(practiceType: 'meditation'),
-            const SizedBox(height: 24),
+            const BenefitCard(practiceType: 'meditation')
+                .animate(delay: 150.ms)
+                .fadeIn(duration: 400.ms),
+            const SizedBox(height: 28),
             Text(
-              '$minutes min',
-              style: Theme.of(context).textTheme.displayMedium
-                  ?.copyWith(fontWeight: FontWeight.w300),
+              '$minutes',
+              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                fontFamily: 'Merriweather',
+                fontWeight: FontWeight.w700,
+                color: scheme.primary,
+              ),
+            ),
+            Text(
+              'minutes',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: scheme.onSurfaceVariant,
+                letterSpacing: 1.5,
+              ),
             ),
             Slider(
               value: minutes.toDouble(),
@@ -77,22 +100,24 @@ class _DurationSetupViewState extends ConsumerState<DurationSetupView> {
                         controller.setPlannedSeconds(preset * 60),
                   ),
               ],
-            ),
-            const SizedBox(height: 24),
+            ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+            const SizedBox(height: 20),
             IconButton(
               icon: Icon(state.muted ? Icons.volume_off : Icons.volume_up),
               tooltip: state.muted ? 'Unmute' : 'Mute',
               onPressed: controller.toggleMuted,
             ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: controller.start,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(160, 56),
-                shape: const StadiumBorder(),
-              ),
-              child: const Text('Start'),
-            ),
+            const SizedBox(height: 12),
+            SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: controller.start,
+                    child: const Text('Start'),
+                  ),
+                )
+                .animate(delay: 300.ms)
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.15, end: 0),
           ],
         ),
       ),

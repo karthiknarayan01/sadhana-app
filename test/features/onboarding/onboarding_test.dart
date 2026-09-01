@@ -26,15 +26,27 @@ void main() {
           child: const SadhanaApp(),
         ),
       );
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the onboarding screen's icon medallion pulses
+      // continuously (see PracticeMedallion's repeat(reverse: true)), so
+      // animations never settle — pump a bounded number of frames instead,
+      // enough for the staggered entrance fades (last one starts at 750ms)
+      // to finish.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1200));
 
-      expect(find.text('Welcome to Sadhana'), findsOneWidget);
+      expect(
+        find.text('Feeling anxious?\nOverwhelmed? Tired?'),
+        findsOneWidget,
+      );
       expect(find.text('Meditate'), findsNothing);
 
-      await tester.tap(find.text('Begin'));
+      await tester.tap(find.text('Begin Your Practice'));
+      // Safe to pumpAndSettle from here: the onboarding screen (and its
+      // perpetually-repeating icon animation) has been unmounted in favor
+      // of RootShell, so animations can actually settle now.
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome to Sadhana'), findsNothing);
+      expect(find.text('Feeling anxious?\nOverwhelmed? Tired?'), findsNothing);
       expect(find.text('Meditate'), findsWidgets);
 
       final prefs = await AppPrefs.load();
@@ -58,7 +70,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome to Sadhana'), findsNothing);
+    expect(find.text('Feeling anxious?\nOverwhelmed? Tired?'), findsNothing);
     expect(find.text('Meditate'), findsWidgets);
   });
 }

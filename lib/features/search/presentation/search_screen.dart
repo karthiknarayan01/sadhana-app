@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/preferred_script_controller.dart';
@@ -35,18 +36,28 @@ class SearchScreen extends ConsumerWidget {
                   Text(
                     'Sanskrit Prayers',
                     style: Theme.of(context).textTheme.headlineMedium,
-                  ),
+                  ).animate().fadeIn(duration: 400.ms),
+                  const SizedBox(height: 4),
+                  Text(
+                    '1,300+ prayers, verses, and hymns to explore',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
                   const SizedBox(height: 12),
                   TextField(
-                    decoration: const InputDecoration(
-                      hintText: 'Search a prayer or verse by name or content…',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: ref
-                        .read(searchControllerProvider.notifier)
-                        .onQueryChanged,
-                  ),
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Search a prayer or verse by name or content…',
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                        onChanged: ref
+                            .read(searchControllerProvider.notifier)
+                            .onQueryChanged,
+                      )
+                      .animate(delay: 150.ms)
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: 0.1, end: 0),
                 ],
               ),
             ),
@@ -172,8 +183,16 @@ class _EmptyPrompt extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_stories, size: 48, color: scheme.outline),
-            const SizedBox(height: 12),
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.auto_stories, size: 40, color: scheme.primary),
+            ),
+            const SizedBox(height: 16),
             Text(
               'A bonus collection of Sanskrit prayers, verses, and hymns — '
               'search by name or content',

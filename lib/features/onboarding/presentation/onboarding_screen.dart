@@ -1,97 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
+import '../../../core/theme/app_theme.dart';
 
 /// Shown exactly once, on first launch — see AppPrefs.hasSeenOnboarding.
-/// Deliberately plain (no animation, no swipeable pages): the app's own
-/// pitch is that it's simple, so the first thing a new user sees should
-/// feel calm and quick to get through, not another flashy onboarding
-/// carousel.
-class OnboardingScreen extends StatelessWidget {
+///
+/// Leads with the feeling, not the footnote: a first-time visitor decides
+/// whether to care in the first few seconds, and nobody reads two
+/// paragraphs of citations to make that call — they decide from the
+/// promise, then (maybe) look for evidence it's credible. So the hook
+/// questions and the benefit come first, big and unhurried; the research
+/// backing them is still here (dishonest marketing is worse than none),
+/// just folded into a single quiet, tappable line instead of two dense
+/// paragraphs up front.
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, required this.onFinished});
 
   final VoidCallback onFinished;
 
   @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  bool _showResearch = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(28, 24, 28, 24),
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  children: [
-                    Icon(
-                      Icons.self_improvement,
-                      size: 56,
-                      color: scheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Welcome to Sadhana',
-                      style: textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Two respected studies help explain why:',
-                      style: textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    const _BenefitPoint(
-                      icon: Icons.spa_outlined,
-                      text:
-                          'A Johns Hopkins-led review of 47 clinical trials '
-                          '(3,515 people) found that about 8 weeks of daily '
-                          'mindfulness meditation eased anxiety and depression '
-                          'about as much as antidepressant medication does in '
-                          'some studies — with no harm found.',
-                      source: 'JAMA Internal Medicine, 2014',
-                    ),
-                    const _BenefitPoint(
-                      icon: Icons.air,
-                      text:
-                          'A Stanford study found that just 5 minutes of daily '
-                          'breathing practice — including box breathing, one '
-                          'of the two techniques here — measurably lifted mood '
-                          'and lowered stress within a month, with the effect '
-                          'building the more consistently people practiced.',
-                      source: 'Cell Reports Medicine, 2023',
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'This app is intentionally simple: no complicated programs, '
-                      'just two quiet practices — meditation and breathing — that '
-                      'you can return to daily.',
-                      style: textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Sanskrit prayers and verses are included as a bonus for '
-                      'anyone interested to explore.',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: onFinished,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppTheme.heroGradientDark : AppTheme.heroGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 16, 28, 24),
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    children: [
+                      const SizedBox(height: 8),
+                      _BreathingIcon(color: scheme.primary),
+                      const SizedBox(height: 28),
+                      Text(
+                            'Feeling anxious?\nOverwhelmed? Tired?',
+                            style: textTheme.headlineMedium,
+                          )
+                          .animate()
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: 0.15, end: 0),
+                      const SizedBox(height: 12),
+                      Text(
+                            "You're in the right place.",
+                            style: textTheme.headlineSmall?.copyWith(
+                              color: scheme.primary,
+                            ),
+                          )
+                          .animate(delay: 150.ms)
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: 0.15, end: 0),
+                      const SizedBox(height: 20),
+                      Text(
+                            '10 quiet minutes a day of meditation and pranayama '
+                            'can bring more calm, less anxiety, and real happiness '
+                            '— with zero side effects.',
+                            style: textTheme.bodyLarge?.copyWith(height: 1.5),
+                          )
+                          .animate(delay: 300.ms)
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: 0.15, end: 0),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Practiced and refined by people for thousands of years. '
+                        'Now it\'s your turn.',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ).animate(delay: 450.ms).fadeIn(duration: 500.ms),
+                      const SizedBox(height: 28),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: const [
+                          _BenefitChip(
+                            icon: Icons.self_improvement,
+                            label: 'Calm',
+                          ),
+                          _BenefitChip(
+                            icon: Icons.favorite_outline,
+                            label: 'Happiness',
+                          ),
+                          _BenefitChip(
+                            icon: Icons.spa_outlined,
+                            label: 'Less anxiety',
+                          ),
+                          _BenefitChip(
+                            icon: Icons.bedtime_outlined,
+                            label: 'Better sleep',
+                          ),
+                        ],
+                      ).animate(delay: 550.ms).fadeIn(duration: 500.ms),
+                      const SizedBox(height: 28),
+                      _ResearchDisclosure(
+                        expanded: _showResearch,
+                        onToggle: () =>
+                            setState(() => _showResearch = !_showResearch),
+                      ).animate(delay: 650.ms).fadeIn(duration: 500.ms),
+                    ],
                   ),
-                  child: const Text('Begin'),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: widget.onFinished,
+                        child: const Text('Begin Your Practice'),
+                      ),
+                    )
+                    .animate(delay: 750.ms)
+                    .fadeIn(duration: 500.ms)
+                    .slideY(begin: 0.2, end: 0),
+              ],
+            ),
           ),
         ),
       ),
@@ -99,48 +135,158 @@ class OnboardingScreen extends StatelessWidget {
   }
 }
 
-class _BenefitPoint extends StatelessWidget {
-  const _BenefitPoint({
-    required this.icon,
-    required this.text,
-    required this.source,
-  });
+class _BreathingIcon extends StatelessWidget {
+  const _BreathingIcon({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child:
+          Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withValues(alpha: 0.12),
+                ),
+                child: Icon(Icons.self_improvement, size: 44, color: color),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scaleXY(
+                begin: 1.0,
+                end: 1.08,
+                duration: 2200.ms,
+                curve: Curves.easeInOut,
+              ),
+    );
+  }
+}
+
+class _BenefitChip extends StatelessWidget {
+  const _BenefitChip({required this.icon, required this.label});
 
   final IconData icon;
-  final String text;
-
-  /// Shown in small, muted text under the claim — real research earns real
-  /// attribution, not just a confident-sounding sentence. See the
-  /// OnboardingScreen's own git history for how these two were verified.
-  final String source;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 22, color: scheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Icon(icon, size: 18, color: scheme.primary),
+          const SizedBox(width: 8),
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
+        ],
+      ),
+    );
+  }
+}
+
+/// The two citations that used to open the screen — kept, just no longer
+/// the first thing anyone has to get past. See git history for how these
+/// were verified.
+class _ResearchDisclosure extends StatelessWidget {
+  const _ResearchDisclosure({required this.expanded, required this.onToggle});
+
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onToggle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(text, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 2),
+                Icon(
+                  Icons.science_outlined,
+                  size: 16,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
                 Text(
-                  source,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  expanded ? 'Hide the research' : 'Backed by real research',
+                  style: textTheme.labelMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
                   ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 16,
+                  color: scheme.onSurfaceVariant,
                 ),
               ],
             ),
-          ),
-        ],
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              child: expanded
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'A Johns Hopkins-led review of 47 clinical trials (3,515 '
+                            'people) found that about 8 weeks of daily mindfulness '
+                            'meditation eased anxiety and depression about as much as '
+                            'antidepressant medication does in some studies — with no '
+                            'harm found.',
+                            style: textTheme.bodySmall,
+                          ),
+                          Text(
+                            'JAMA Internal Medicine, 2014',
+                            style: textTheme.labelSmall?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'A Stanford study found that just 5 minutes of daily '
+                            'breathing practice — including box breathing, one of the '
+                            'two techniques here — measurably lifted mood and lowered '
+                            'stress within a month, building the more consistently '
+                            'people practiced.',
+                            style: textTheme.bodySmall,
+                          ),
+                          Text(
+                            'Cell Reports Medicine, 2023',
+                            style: textTheme.labelSmall?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Sanskrit prayers and verses are included as a bonus for '
+                            'anyone interested to explore.',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }

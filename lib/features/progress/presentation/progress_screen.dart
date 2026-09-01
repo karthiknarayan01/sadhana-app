@@ -1,8 +1,8 @@
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../benefits/presentation/benefit_sheet.dart';
 import '../application/progress_providers.dart';
 import 'heatmap_grid.dart';
 import 'milestone_grid.dart';
@@ -61,12 +61,15 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                   Text(
                     'Progress',
                     style: Theme.of(context).textTheme.headlineMedium,
-                  ),
+                  ).animate().fadeIn(duration: 400.ms),
                   const SizedBox(height: 20),
                   _StreakHeader(
-                    currentStreak: stats.currentStreak,
-                    longestStreak: stats.longestStreak,
-                  ),
+                        currentStreak: stats.currentStreak,
+                        longestStreak: stats.longestStreak,
+                      )
+                      .animate(delay: 100.ms)
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: 0.08, end: 0),
                   const SizedBox(height: 28),
                   Text(
                     'Wellbeing trend',
@@ -106,33 +109,6 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
                   MilestoneGrid(unlockedIds: stats.unlockedMilestoneIds),
                   const SizedBox(height: 28),
                   Text(
-                    'Why practice?',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ActionChip(
-                        label: const Text('Meditation'),
-                        onPressed: () =>
-                            showBenefitSheet(context, 'meditation'),
-                      ),
-                      ActionChip(
-                        label: const Text('Box Breathing'),
-                        onPressed: () =>
-                            showBenefitSheet(context, 'box_breathing'),
-                      ),
-                      ActionChip(
-                        label: const Text('Alternate Nostril'),
-                        onPressed: () =>
-                            showBenefitSheet(context, 'alt_nostril_breathing'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
                     'Total: ${stats.totalSessions} session${stats.totalSessions == 1 ? '' : 's'} · '
                     '${stats.totalMinutes} minute${stats.totalMinutes == 1 ? '' : 's'}',
                     style: Theme.of(context).textTheme.bodySmall,
@@ -167,10 +143,21 @@ class _StreakHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [scheme.primary, scheme.primaryContainer],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -179,11 +166,12 @@ class _StreakHeader extends StatelessWidget {
             icon: Icons.local_fire_department,
             value: '$currentStreak',
             label: currentStreak == 1 ? 'day streak' : 'days streak',
+            glow: currentStreak > 0,
           ),
           Container(
             width: 1,
             height: 40,
-            color: scheme.onPrimaryContainer.withValues(alpha: 0.2),
+            color: scheme.onPrimary.withValues(alpha: 0.25),
           ),
           _StreakStat(
             icon: Icons.emoji_events,
@@ -201,30 +189,44 @@ class _StreakStat extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
+    this.glow = false,
   });
 
   final IconData icon;
   final String value;
   final String label;
+  final bool glow;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    Widget iconWidget = Icon(icon, color: scheme.onPrimary);
+    if (glow) {
+      iconWidget = iconWidget
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .scaleXY(
+            begin: 1.0,
+            end: 1.15,
+            duration: 900.ms,
+            curve: Curves.easeInOut,
+          );
+    }
     return Column(
       children: [
-        Icon(icon, color: scheme.onPrimaryContainer),
+        iconWidget,
         const SizedBox(height: 4),
         Text(
           value,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: scheme.onPrimaryContainer,
+            fontFamily: 'Merriweather',
+            color: scheme.onPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall
-              ?.copyWith(color: scheme.onPrimaryContainer),
+              ?.copyWith(color: scheme.onPrimary),
         ),
       ],
     );

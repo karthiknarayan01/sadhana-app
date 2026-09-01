@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/format.dart';
@@ -30,6 +31,21 @@ class TimerRunningView extends ConsumerWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
+                    Container(
+                          width: 220,
+                          height: 220,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.primary.withValues(alpha: 0.08),
+                          ),
+                        )
+                        .animate(onPlay: (c) => c.repeat(reverse: true))
+                        .scaleXY(
+                          begin: 0.94,
+                          end: 1.04,
+                          duration: 3000.ms,
+                          curve: Curves.easeInOut,
+                        ),
                     CustomPaint(
                       size: const Size(260, 260),
                       painter: TimerRingPainter(

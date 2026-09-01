@@ -1,57 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart' show Share;
 
-import '../application/favorites_controller.dart';
 import '../application/preferred_script_controller.dart';
 import '../domain/shloka_result.dart';
 
-class ShlokaDetailScreen extends ConsumerStatefulWidget {
+class ShlokaDetailScreen extends ConsumerWidget {
   const ShlokaDetailScreen({super.key, required this.result});
 
   final ShlokaResult result;
 
   @override
-  ConsumerState<ShlokaDetailScreen> createState() => _ShlokaDetailScreenState();
-}
-
-class _ShlokaDetailScreenState extends ConsumerState<ShlokaDetailScreen> {
-  bool _showTransliteration = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final result = widget.result;
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final favorites = ref.watch(favoritesControllerProvider);
-    final isFavorite = favorites.contains(result.id);
     final preferredScript = ref.watch(preferredScriptControllerProvider);
     final meaning = result.meaningIn(preferredScript);
-
-    final scriptText = _showTransliteration
-        ? result.contentIn('english')
-        : result.contentIn(preferredScript);
-    final usingDevanagari =
-        !_showTransliteration && preferredScript == 'devanagari';
+    final scriptText = result.contentIn(preferredScript);
+    final usingDevanagari = preferredScript == 'devanagari';
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-            onPressed: () => ref
-                .read(favoritesControllerProvider.notifier)
-                .toggle(result.id),
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _share(result, preferredScript),
-          ),
-        ],
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -70,96 +38,64 @@ class _ShlokaDetailScreenState extends ConsumerState<ShlokaDetailScreen> {
                   type: MaterialType.transparency,
                   child: Text(
                     result.nameIn(preferredScript),
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: preferredScript == 'devanagari'
+                          ? 'NotoSansDevanagari'
+                          : null,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               _GlassCard(
-                    child: Text(
-                      scriptText,
-                      style: usingDevanagari
-                          ? const TextStyle(
-                              fontFamily: 'NotoSansDevanagari',
-                              fontSize: 22,
-                              height: 1.8,
-                            )
-                          : const TextStyle(
-                              fontFamily: 'Merriweather',
-                              fontSize: 17,
-                              height: 1.7,
-                              fontStyle: FontStyle.italic,
-                            ),
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(duration: 400.ms, delay: 100.ms)
-                  .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => setState(
-                    () => _showTransliteration = !_showTransliteration,
-                  ),
-                  icon: const Icon(Icons.translate, size: 18),
-                  label: Text(
-                    _showTransliteration
-                        ? 'Show original script'
-                        : 'Show transliteration',
-                  ),
+                child: Text(
+                  scriptText,
+                  style: usingDevanagari
+                      ? const TextStyle(
+                          fontFamily: 'NotoSansDevanagari',
+                          fontSize: 22,
+                          height: 1.8,
+                        )
+                      : const TextStyle(
+                          fontFamily: 'Merriweather',
+                          fontSize: 17,
+                          height: 1.7,
+                          fontStyle: FontStyle.italic,
+                        ),
                 ),
               ),
               if (meaning != null) ...[
                 const SizedBox(height: 12),
                 _GlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Meaning',
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            meaning,
-                            style: const TextStyle(
-                              fontFamily: 'Merriweather',
-                              fontSize: 15,
-                              height: 1.6,
-                            ),
-                          ),
-                        ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Meaning',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 400.ms, delay: 250.ms)
-                    .slideY(begin: 0.08, end: 0, curve: Curves.easeOut),
+                      const SizedBox(height: 8),
+                      Text(
+                        meaning,
+                        style: const TextStyle(
+                          fontFamily: 'Merriweather',
+                          fontSize: 15,
+                          height: 1.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),
         ),
       ),
     );
-  }
-
-  void _share(ShlokaResult result, String preferredScript) {
-    final buffer = StringBuffer()
-      ..writeln(result.nameIn(preferredScript))
-      ..writeln()
-      ..writeln(result.contentIn(preferredScript));
-    final meaning = result.meaningIn(preferredScript);
-    if (meaning != null) {
-      buffer
-        ..writeln()
-        ..writeln(meaning);
-    }
-    Share.share(buffer.toString());
   }
 }
 

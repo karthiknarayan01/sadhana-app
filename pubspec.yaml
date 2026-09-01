@@ -10,7 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
 
   # State management — see lib/core for the drift database this wires
   # StreamProviders up to.
@@ -44,14 +43,13 @@ dependencies:
   fl_chart: ^0.69.2
   confetti: ^0.8.0
 
-  # Shloka search: HTTP client for the backend's /search endpoint, a loading
-  # skeleton, and plain-text sharing. Devanagari/serif reading type is
-  # bundled locally (see flutter.fonts below), not google_fonts' default
-  # runtime CDN fetch — the reader is the app's main content, so its font
-  # can't wait on a network round-trip on first view.
+  # Shloka search: HTTP client for the backend's /search endpoint and a
+  # loading skeleton. Devanagari/serif reading type is bundled locally (see
+  # flutter.fonts below), not google_fonts' default runtime CDN fetch — the
+  # reader is the app's main content, so its font can't wait on a network
+  # round-trip on first view.
   dio: ^5.7.0
   shimmer: ^3.0.0
-  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:
@@ -76,7 +74,6 @@ flutter:
 
   assets:
     - assets/audio/
-    - assets/content/
     - assets/icon/
 
   # Bundled locally rather than fetched from Google's CDN at runtime (the

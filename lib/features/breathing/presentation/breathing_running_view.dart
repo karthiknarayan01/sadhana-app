@@ -51,8 +51,20 @@ class BreathingRunningView extends ConsumerWidget {
                 height: 220 * targetScale,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: scheme.primary.withValues(alpha: 0.15),
+                  gradient: RadialGradient(
+                    colors: [
+                      scheme.primary.withValues(alpha: 0.28),
+                      scheme.primary.withValues(alpha: 0.1),
+                    ],
+                  ),
                   border: Border.all(color: scheme.primary, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: scheme.primary.withValues(alpha: 0.25),
+                      blurRadius: 32,
+                      spreadRadius: 4,
+                    ),
+                  ],
                 ),
                 child: Center(
                   child: Text(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 /// The settle-in screen shown between Start and the gong that marks
 /// practice actually beginning — identical need for meditation and
@@ -27,13 +28,25 @@ class WarmupCountdownView extends StatelessWidget {
                   Text(
                     'Get ready…',
                     style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  ).animate().fadeIn(duration: 400.ms),
                   const SizedBox(height: 16),
                   Text(
-                    '$secondsRemaining',
-                    style: Theme.of(context).textTheme.displayLarge
-                        ?.copyWith(fontWeight: FontWeight.w200),
-                  ),
+                        '$secondsRemaining',
+                        key: ValueKey(secondsRemaining),
+                        style: Theme.of(context).textTheme.displayLarge
+                            ?.copyWith(
+                              fontFamily: 'Merriweather',
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 250.ms)
+                      .scale(
+                        begin: const Offset(0.85, 0.85),
+                        end: const Offset(1, 1),
+                        duration: 250.ms,
+                      ),
                 ],
               ),
             ),
