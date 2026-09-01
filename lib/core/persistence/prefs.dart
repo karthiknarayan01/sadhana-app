@@ -15,7 +15,6 @@ class AppPrefs {
 
   static const _keySoundMuted = 'sound_muted';
   static const _keyLastMeditationSeconds = 'last_meditation_seconds';
-  static const _keyFavoriteShlokaIds = 'favorite_shloka_ids';
   static const _keyPreferredScript = 'preferred_script';
   static const _keyHasSeenOnboarding = 'has_seen_onboarding';
 
@@ -29,11 +28,6 @@ class AppPrefs {
       _prefs.getInt(_keyLastMeditationSeconds) ?? 600;
   Future<void> setLastMeditationSeconds(int seconds) =>
       _prefs.setInt(_keyLastMeditationSeconds, seconds);
-
-  Set<String> get favoriteShlokaIds =>
-      (_prefs.getStringList(_keyFavoriteShlokaIds) ?? const []).toSet();
-  Future<void> setFavoriteShlokaIds(Set<String> ids) =>
-      _prefs.setStringList(_keyFavoriteShlokaIds, ids.toList());
 
   // Which language key (matching the backend's per-document language maps,
   // e.g. "devanagari"/"english") search results and the detail screen
