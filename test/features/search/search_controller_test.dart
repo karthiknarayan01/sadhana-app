@@ -176,4 +176,146 @@ void main() {
       expect(state.isLoadingMore, isFalse);
     });
   });
+
+  test('loadMore reports success or failure to its caller', () {
+    final api = FakeSearchApi(
+      resultsByQuery: {
+        'gayatri': [sampleResult()],
+      },
+      hasMoreByQuery: {'gayatri': true},
+    );
+    final container = ProviderContainer(
+      overrides: [searchApiProvider.overrideWithValue(api)],
+    );
+    addTearDown(container.dispose);
+
+    fakeAsync((async) {
+      final notifier = container.read(searchControllerProvider.notifier);
+      notifier.onQueryChanged('gayatri');
+      async.elapse(const Duration(milliseconds: 400));
+
+      bool? succeeded;
+      api.shouldFail = true;
+      notifier.loadMoreForTesting().then((v) => succeeded = v);
+      async.flushMicrotasks();
+      expect(succeeded, isFalse);
+
+      succeeded = null;
+      api.shouldFail = false;
+      notifier.loadMoreForTesting().then((v) => succeeded = v);
+      async.flushMicrotasks();
+      expect(succeeded, isTrue);
+    });
+  });
+
+  test(
+    'refresh() re-runs the current query without clearing results first',
+    () {
+      final result = sampleResult();
+      final api = FakeSearchApi(
+        resultsByQuery: {
+          'gayatri': [result],
+        },
+      );
+      final container = ProviderContainer(
+        overrides: [searchApiProvider.overrideWithValue(api)],
+      );
+      addTearDown(container.dispose);
+
+      fakeAsync((async) {
+        final notifier = container.read(searchControllerProvider.notifier);
+        notifier.onQueryChanged('gayatri');
+        async.elapse(const Duration(milliseconds: 400));
+
+        // A pull-to-refresh doesn't flip back to `loading` — unlike the
+        // initial debounced search, it's not supposed to blank the screen
+        // out to a skeleton while the request is in flight.
+        notifier.refresh();
+        expect(
+          container.read(searchControllerProvider).status,
+          SearchStatus.success,
+        );
+        async.flushMicrotasks();
+
+        expect(api.queriesReceived, ['gayatri', 'gayatri']);
+        expect(
+          container.read(searchControllerProvider).status,
+          SearchStatus.success,
+        );
+      });
+    },
+  );
+
+  test(
+    'a failed refresh keeps existing results on screen and reports failure',
+    () {
+      final api = FakeSearchApi(
+        resultsByQuery: {
+          'gayatri': [sampleResult()],
+        },
+      );
+      final container = ProviderContainer(
+        overrides: [searchApiProvider.overrideWithValue(api)],
+      );
+      addTearDown(container.dispose);
+
+      fakeAsync((async) {
+        final notifier = container.read(searchControllerProvider.notifier);
+        notifier.onQueryChanged('gayatri');
+        async.elapse(const Duration(milliseconds: 400));
+
+        bool? succeeded;
+        api.shouldFail = true;
+        notifier.refresh().then((v) => succeeded = v);
+        async.flushMicrotasks();
+
+        expect(succeeded, isFalse);
+        final state = container.read(searchControllerProvider);
+        expect(state.status, SearchStatus.success);
+        expect(state.results, hasLength(1));
+      });
+    },
+  );
+
+  test('a failed refresh with nothing already on screen falls back to the error state', () {
+    final api = FakeSearchApi();
+    final container = ProviderContainer(
+      overrides: [searchApiProvider.overrideWithValue(api)],
+    );
+    addTearDown(container.dispose);
+
+    fakeAsync((async) {
+      final notifier = container.read(searchControllerProvider.notifier);
+      notifier.onQueryChanged('gayatri');
+      async.elapse(const Duration(milliseconds: 400));
+
+      api.shouldFail = true;
+      notifier.refresh();
+      async.flushMicrotasks();
+
+      expect(
+        container.read(searchControllerProvider).status,
+        SearchStatus.error,
+      );
+    });
+  });
+
+  test('refresh() is a no-op when there is no query yet', () {
+    final api = FakeSearchApi();
+    final container = ProviderContainer(
+      overrides: [searchApiProvider.overrideWithValue(api)],
+    );
+    addTearDown(container.dispose);
+
+    fakeAsync((async) {
+      container.read(searchControllerProvider.notifier).refresh();
+      async.flushMicrotasks();
+
+      expect(api.queriesReceived, isEmpty);
+      expect(
+        container.read(searchControllerProvider).status,
+        SearchStatus.idle,
+      );
+    });
+  });
 }

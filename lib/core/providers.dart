@@ -30,5 +30,17 @@ final audioServiceProvider = Provider<AudioService>((ref) {
 });
 
 final searchApiProvider = Provider<SearchApi>((ref) {
-  return DioSearchApi(Dio(BaseOptions(baseUrl: searchApiBaseUrl)));
+  return DioSearchApi(
+    Dio(
+      BaseOptions(
+        baseUrl: searchApiBaseUrl,
+        // Without these, a hung connection (dropped wifi mid-request, a
+        // backend that never responds) waits indefinitely instead of
+        // surfacing the error state — Dio's own default is no timeout at
+        // all.
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 8),
+      ),
+    ),
+  );
 });

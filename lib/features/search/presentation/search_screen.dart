@@ -113,35 +113,59 @@ class _ResultsAreaState extends ConsumerState<_ResultsArea> {
     super.dispose();
   }
 
-  void _onScroll() {
+  // Not fire-and-forget: loadMore() reports whether it actually got new
+  // results, so a real failure (as opposed to a legitimate "nothing more
+  // to load") can be surfaced instead of just silently doing nothing.
+  Future<void> _onScroll() async {
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
-      ref.read(searchControllerProvider.notifier).loadMore();
+    if (position.pixels < position.maxScrollExtent - _loadMoreThreshold) {
+      return;
+    }
+    final ok = await ref.read(searchControllerProvider.notifier).loadMore();
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't load more — try again in a moment."),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    final ok = await ref.read(searchControllerProvider.notifier).refresh();
+    if (!ok && mounted && widget.state.results.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't refresh — try again in a moment."),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = widget.state;
-    switch (state.status) {
-      case SearchStatus.idle:
-        return state.query.trim().isEmpty
-            ? const _EmptyPrompt()
-            : const SizedBox.shrink();
-      case SearchStatus.loading:
-        return const ResultsSkeleton();
-      case SearchStatus.error:
-        return const _ErrorState();
-      case SearchStatus.success:
-        if (state.results.isEmpty) {
-          return const _NoMatches();
-        }
-        final itemCount = state.results.length + (state.isLoadingMore ? 1 : 0);
-        return ListView.builder(
+    // AlwaysScrollableScrollPhysics on every branch (not just the results
+    // list) so RefreshIndicator's pull-down-to-retry gesture works even
+    // when there's nothing on screen yet to fill/overflow the viewport —
+    // e.g. pulling down on the error state to retry.
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: switch (state.status) {
+        SearchStatus.idle =>
+          state.query.trim().isEmpty
+              ? const _CenteredScrollable(child: _EmptyPrompt())
+              : const SizedBox.shrink(),
+        SearchStatus.loading => const ResultsSkeleton(),
+        SearchStatus.error => const _CenteredScrollable(child: _ErrorState()),
+        SearchStatus.success when state.results.isEmpty =>
+          const _CenteredScrollable(child: _NoMatches()),
+        SearchStatus.success => ListView.builder(
           controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(top: 6, bottom: 24),
-          itemCount: itemCount,
+          itemCount: state.results.length + (state.isLoadingMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (index >= state.results.length) {
               return const Padding(
@@ -166,8 +190,27 @@ class _ResultsAreaState extends ConsumerState<_ResultsArea> {
               ),
             );
           },
-        );
-    }
+        ),
+      },
+    );
+  }
+}
+
+/// Makes a widget that doesn't otherwise scroll (a centered message, say)
+/// pullable — RefreshIndicator needs an actual Scrollable descendant to
+/// hang its gesture off, even when the content is short enough that it'd
+/// never normally need to scroll.
+class _CenteredScrollable extends StatelessWidget {
+  const _CenteredScrollable({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [SliverFillRemaining(hasScrollBody: false, child: child)],
+    );
   }
 }
 
