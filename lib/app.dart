@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/analytics/analytics_service.dart';
 import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/breathing/presentation/breathing_home_screen.dart';
@@ -64,29 +63,18 @@ class _AppRootState extends ConsumerState<_AppRoot> {
   }
 }
 
-const _featureNames = ['meditate', 'breathe', 'progress', 'prayers'];
-
 /// Bottom-nav shell across the app's four sections. Each tab's screen owns
 /// its own feature (meditation/breathing/progress/search) — this widget is
-/// deliberately just navigation, no feature logic — plus tracking how long
-/// each tab stays visible, for AnalyticsService's feature_time event.
-class RootShell extends ConsumerStatefulWidget {
+/// deliberately just navigation, no feature logic.
+class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
   @override
-  ConsumerState<RootShell> createState() => _RootShellState();
+  State<RootShell> createState() => _RootShellState();
 }
 
-class _RootShellState extends ConsumerState<RootShell>
-    with WidgetsBindingObserver {
+class _RootShellState extends State<RootShell> {
   int _index = 0;
-  final Stopwatch _tabStopwatch = Stopwatch()..start();
-  // Cached rather than ref.read() at flush time: dispose() runs after
-  // Riverpod considers this element's ref unusable (it asserts against
-  // exactly that), but reading a plain Provider's already-constructed value
-  // in initState() and reusing it later is fine — it's a singleton for the
-  // app's lifetime anyway (see core/providers.dart).
-  late final AnalyticsService _analytics;
 
   static const _screens = [
     MeditationHomeScreen(),
@@ -96,59 +84,12 @@ class _RootShellState extends ConsumerState<RootShell>
   ];
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _analytics = ref.read(analyticsServiceProvider);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _flushTabTime();
-    super.dispose();
-  }
-
-  // Backgrounding/closing the app doesn't tear down this State, so without
-  // this a user leaving the app open (in another app, or overnight) would
-  // silently keep accruing "time in feature" the whole time it's not even
-  // visible. Flushing on pause and restarting the stopwatch on resume keeps
-  // the recorded time honest — screen-visible time, not wall-clock time.
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      _flushTabTime();
-    } else if (state == AppLifecycleState.resumed) {
-      _tabStopwatch.start();
-    }
-  }
-
-  // Stops, sends, and resets to zero in one step — so a second flush before
-  // the stopwatch is ever restarted (e.g. `paused` immediately followed by
-  // `detached`, or dispose() right after a pause) safely sends nothing the
-  // second time instead of re-sending the same elapsed span twice.
-  void _flushTabTime() {
-    _tabStopwatch.stop();
-    final elapsed = _tabStopwatch.elapsed;
-    _tabStopwatch.reset();
-    _analytics.recordFeatureTime(_featureNames[_index], elapsed);
-  }
-
-  void _onDestinationSelected(int newIndex) {
-    if (newIndex == _index) return;
-    _flushTabTime();
-    setState(() => _index = newIndex);
-    _tabStopwatch.start();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: _onDestinationSelected,
+        onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.self_improvement),

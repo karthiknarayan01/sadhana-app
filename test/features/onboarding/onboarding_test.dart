@@ -7,7 +7,6 @@ import 'package:sadhana/core/persistence/prefs.dart';
 import 'package:sadhana/core/providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../fakes/fake_analytics_service.dart';
 import '../../fakes/fake_search_api.dart';
 
 void main() {
@@ -23,7 +22,6 @@ void main() {
           overrides: [
             databaseProvider.overrideWithValue(db),
             searchApiProvider.overrideWithValue(FakeSearchApi()),
-            analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
           ],
           child: const SadhanaApp(),
         ),
@@ -66,7 +64,6 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           searchApiProvider.overrideWithValue(FakeSearchApi()),
-          analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
         ],
         child: const SadhanaApp(),
       ),

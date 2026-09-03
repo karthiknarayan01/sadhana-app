@@ -5,7 +5,6 @@ import 'package:sadhana/core/providers.dart';
 import 'package:sadhana/features/search/application/search_controller.dart';
 import 'package:sadhana/features/search/application/search_state.dart';
 
-import '../../fakes/fake_analytics_service.dart';
 import '../../fakes/fake_search_api.dart';
 
 void main() {
@@ -18,10 +17,7 @@ void main() {
         },
       );
       final container = ProviderContainer(
-        overrides: [
-          searchApiProvider.overrideWithValue(api),
-          analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
-        ],
+        overrides: [searchApiProvider.overrideWithValue(api)],
       );
       addTearDown(container.dispose);
 
@@ -99,10 +95,7 @@ void main() {
         hasMoreByQuery: {'gayatri': true},
       );
       final container = ProviderContainer(
-        overrides: [
-          searchApiProvider.overrideWithValue(api),
-          analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
-        ],
+        overrides: [searchApiProvider.overrideWithValue(api)],
       );
       addTearDown(container.dispose);
 
@@ -225,10 +218,7 @@ void main() {
         },
       );
       final container = ProviderContainer(
-        overrides: [
-          searchApiProvider.overrideWithValue(api),
-          analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
-        ],
+        overrides: [searchApiProvider.overrideWithValue(api)],
       );
       addTearDown(container.dispose);
 
@@ -265,10 +255,7 @@ void main() {
         },
       );
       final container = ProviderContainer(
-        overrides: [
-          searchApiProvider.overrideWithValue(api),
-          analyticsServiceProvider.overrideWithValue(FakeAnalyticsService()),
-        ],
+        overrides: [searchApiProvider.overrideWithValue(api)],
       );
       addTearDown(container.dispose);
 
