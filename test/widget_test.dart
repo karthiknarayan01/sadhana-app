@@ -8,6 +8,7 @@ import 'package:sadhana/app.dart';
 import 'package:sadhana/core/persistence/database.dart';
 import 'package:sadhana/core/providers.dart';
 
+import 'fakes/fake_analytics_service.dart';
 import 'fakes/fake_search_api.dart';
 
 void main() {
@@ -25,6 +26,7 @@ void main() {
     // so, like the feature-level provider tests, swap in an in-memory one.
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
+    final analytics = FakeAnalyticsService();
 
     await tester.pumpWidget(
       ProviderScope(
@@ -33,6 +35,10 @@ void main() {
           // The Search tab is also built eagerly — swap in a fake so this
           // smoke test never attempts a real network call.
           searchApiProvider.overrideWithValue(FakeSearchApi()),
+          // RootShell fires a real, fire-and-forget HTTP call per tab
+          // switch otherwise — flutter_test's strict "no pending timers"
+          // check at the end of the test doesn't tolerate that.
+          analyticsServiceProvider.overrideWithValue(analytics),
         ],
         child: const SadhanaApp(),
       ),
@@ -62,5 +68,13 @@ void main() {
     // label) is a different, shorter string, so this stays findsOneWidget.
     expect(find.text('Sanskrit Prayers'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
+
+    // Three switches happened (meditate->breathe->progress->prayers) —
+    // each should have flushed the *previous* tab's time-in-feature.
+    expect(analytics.featureTimesRecorded.map((e) => e.$1), [
+      'meditate',
+      'breathe',
+      'progress',
+    ]);
   });
 }

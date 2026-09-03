@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/search/data/search_api.dart';
+import 'analytics/analytics_service.dart';
 import 'audio/audio_service.dart';
 import 'config/app_config.dart';
 import 'persistence/database.dart';
@@ -27,6 +28,13 @@ final audioServiceProvider = Provider<AudioService>((ref) {
   final service = AudioService();
   ref.onDispose(service.dispose);
   return service;
+});
+
+// Deliberately its own plain Dio instance, not a shared one with
+// searchApiProvider's — that one retries with backoff, which a
+// fire-and-forget analytics call shouldn't pay for (see AnalyticsService).
+final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
+  return DioAnalyticsService(Dio(BaseOptions(baseUrl: searchApiBaseUrl)));
 });
 
 final searchApiProvider = Provider<SearchApi>((ref) {

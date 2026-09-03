@@ -66,6 +66,10 @@ class SearchController extends Notifier<SearchState> {
         hasMore: page.hasMore,
         isLoadingMore: false,
       );
+      // Once per search that actually reached the user — not per HTTP call
+      // (loadMore/refresh continue this same search, they don't start a
+      // new one), so retries/pagination don't inflate the count.
+      ref.read(analyticsServiceProvider).recordSearchPerformed();
     } on SearchUnavailableException {
       if (thisRequest != _requestId) return;
       state = state.copyWith(
