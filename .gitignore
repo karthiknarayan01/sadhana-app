@@ -56,3 +56,9 @@ app.*.map.json
 # it needs a `dart compile js` step nothing currently automates.
 web/drift_worker.js.deps
 web/drift_worker.js.map
+
+# fastlane
+ios/fastlane/report.xml
+ios/fastlane/build/
+ios/fastlane/Preview.html
+ios/fastlane/test_output/

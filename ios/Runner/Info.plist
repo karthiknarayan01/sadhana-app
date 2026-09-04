@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sadhana plays meditation bells and guided audio. It does not record from the microphone or store any audio.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -56,13 +60,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

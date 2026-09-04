@@ -7,8 +7,8 @@ import '../application/search_controller.dart';
 import '../application/search_state.dart';
 import 'language_selector.dart';
 import 'result_card.dart';
+import 'reader_screen.dart';
 import 'results_skeleton.dart';
-import 'shloka_detail_screen.dart';
 
 class SearchScreen extends ConsumerWidget {
   const SearchScreen({super.key});
@@ -37,13 +37,6 @@ class SearchScreen extends ConsumerWidget {
                     'Sanskrit Prayers',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ).animate().fadeIn(duration: 400.ms),
-                  const SizedBox(height: 4),
-                  Text(
-                    '1,300+ prayers, verses, and hymns to explore',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
                   const SizedBox(height: 12),
                   TextField(
                         decoration: const InputDecoration(
@@ -184,9 +177,7 @@ class _ResultsAreaState extends ConsumerState<_ResultsArea> {
               result: result,
               preferredScript: widget.preferredScript,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ShlokaDetailScreen(result: result),
-                ),
+                MaterialPageRoute(builder: (_) => ReaderScreen(result: result)),
               ),
             );
           },

@@ -67,8 +67,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       const SizedBox(height: 20),
                       Text(
                             '10 quiet minutes a day of meditation and pranayama '
-                            'can bring more calm, less anxiety, and real happiness '
-                            '— with zero side effects.',
+                            'can bring more calm, less anxiety, and real happiness.',
                             style: textTheme.bodyLarge?.copyWith(height: 1.5),
                           )
                           .animate(delay: 300.ms)
