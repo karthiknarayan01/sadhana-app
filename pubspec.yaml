@@ -2,7 +2,7 @@ name: sadhana
 description: "Meditation, pranayama, and Sanskrit prayer search"
 publish_to: 'none'
 
-version: 1.0.0+6
+version: 1.0.0+7
 
 environment:
   sdk: ^3.13.0
