@@ -163,7 +163,7 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
           value: _holdSeconds,
           suffix: 's',
           onChanged: (v) => setState(() => _holdSeconds = v),
-          clamp: BreathingCycleLogic.clampPhaseSeconds,
+          clamp: BreathingCycleLogic.clampHoldSeconds, // min 3s
         ),
         _Stepper(
           label: 'Exhale',

@@ -4,7 +4,6 @@ import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/audio/audio_service.dart';
 import '../../../core/providers.dart';
 import '../domain/breathing_cycle_logic.dart';
 import '../domain/breathing_pattern.dart';
@@ -55,7 +54,9 @@ class BreathingController extends Notifier<BreathingState> {
   }) => _startWarmup(
     BreathingPattern.alternateNostril(
       inhaleSeconds: BreathingCycleLogic.clampPhaseSeconds(inhaleSeconds),
-      holdSeconds: BreathingCycleLogic.clampPhaseSeconds(holdSeconds),
+      // A rung bell for every phase needs breathing room around it — the
+      // hold can't be as short as the other phases.
+      holdSeconds: BreathingCycleLogic.clampHoldSeconds(holdSeconds),
       exhaleSeconds: BreathingCycleLogic.clampPhaseSeconds(exhaleSeconds),
       cycles: BreathingCycleLogic.clampCycles(cycles),
     ),
@@ -83,16 +84,8 @@ class BreathingController extends Notifier<BreathingState> {
     if (remaining <= 0) {
       _warmupTicker?.cancel();
       _warmupTicker = null;
-      // Box breathing opens on the short bell. Alternate nostril opens on
-      // its inhale cue instead — the first phase is always an inhale, and
-      // the eyes-closed practitioner needs that cue as much as any later
-      // one. The gong closes either practice.
-      final audio = ref.read(audioServiceProvider);
-      if (state.pattern.practiceType == BreathingPattern.alternateNostrilType) {
-        await audio.playBreathCue(BreathCue.inhale, muted: state.muted);
-      } else {
-        await audio.playBell(muted: state.muted);
-      }
+      // A short bell opens every breathing practice; the gong closes it.
+      await ref.read(audioServiceProvider).playBell(muted: state.muted);
       _beginPractice();
       return;
     }
@@ -138,24 +131,10 @@ class BreathingController extends Notifier<BreathingState> {
       return;
     }
     if (result.phaseJustChanged) {
-      _cuePhaseChange(state.currentPhase.type);
-    }
-  }
-
-  void _cuePhaseChange(BreathingPhaseType type) {
-    final audio = ref.read(audioServiceProvider);
-    // Box breathing's four equal phases get the short bell. Alternate
-    // nostril is practised with the eyes closed and its six phases can be
-    // very short, so it's guided by ear instead: a rising tone to breathe
-    // in, a steady one to hold, a falling one to breathe out.
-    if (state.pattern.practiceType == BreathingPattern.alternateNostrilType) {
-      audio.playBreathCue(switch (type) {
-        BreathingPhaseType.inhale => BreathCue.inhale,
-        BreathingPhaseType.hold => BreathCue.hold,
-        BreathingPhaseType.exhale => BreathCue.exhale,
-      }, muted: state.muted);
-    } else {
-      audio.playBell(muted: state.muted);
+      // Both practices ring the short bell on every phase boundary
+      // (inhale / hold / exhale). Alternate nostril's hold is kept at 3s
+      // or more so the bells never crowd each other.
+      ref.read(audioServiceProvider).playBell(muted: state.muted);
     }
   }
 

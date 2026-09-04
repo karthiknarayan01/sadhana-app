@@ -2,7 +2,6 @@ import 'package:drift/native.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sadhana/core/audio/audio_service.dart';
 import 'package:sadhana/core/persistence/database.dart';
 import 'package:sadhana/core/providers.dart';
 import 'package:sadhana/features/breathing/application/breathing_controller.dart';
@@ -92,45 +91,41 @@ void main() {
       expect(state.completedCycles, 2);
       // Opening bell + a bell on every phase boundary (4/cycle * 2 = 8).
       expect(audio.bellPlayCount, 9);
-      expect(audio.breathCuePlayCount, 0);
     });
   });
 
-  test('alternate nostril is guided by rising / steady / falling cues', () {
-    fakeAsync((async) {
-      final notifier = container.read(breathingControllerProvider.notifier);
-      notifier.startAlternateNostril(
-        inhaleSeconds: 2,
-        holdSeconds: 2,
-        exhaleSeconds: 2,
-        cycles: 20,
-      ); // 6 phases * 2s = 12s per cycle
-      async.elapse(_warmup);
-      // No bell for alternate nostril — it opens on the inhale cue itself.
-      expect(audio.bellPlayCount, 0);
-      expect(audio.breathCuePlayCount, 1);
+  test(
+    'alternate nostril rings the bell on every phase, hold clamped to 3s',
+    () {
+      fakeAsync((async) {
+        final notifier = container.read(breathingControllerProvider.notifier);
+        notifier.startAlternateNostril(
+          inhaleSeconds: 3,
+          holdSeconds: 2, // asked for 2 — clamped up to 3
+          exhaleSeconds: 3,
+          cycles: 20,
+        );
+        final pattern = container.read(breathingControllerProvider).pattern;
+        expect(pattern.phases[1].seconds, 3); // hold
+        // one cycle: inhale3 + hold3 + exhale3, twice = 18s
+        async.elapse(_warmup);
+        expect(audio.bellPlayCount, 1); // opening bell, same as box
 
-      async.elapse(const Duration(seconds: 11)); // through the first cycle
-
-      expect(audio.bellPlayCount, 0);
-      // opening inhale + a cue entering each of the next 5 phases
-      expect(audio.breathCues, [
-        BreathCue.inhale, // inhale left (opening)
-        BreathCue.hold,
-        BreathCue.exhale, // exhale right
-        BreathCue.inhale, // inhale right
-        BreathCue.hold,
-        BreathCue.exhale, // exhale left
-      ]);
-    });
-  });
+        async.elapse(const Duration(seconds: 18)); // one full cycle
+        expect(
+          audio.bellPlayCount,
+          1 + 6,
+        ); // opening + a bell on each of 6 phases
+      });
+    },
+  );
 
   test('alternate nostril tracks which side is active', () {
     fakeAsync((async) {
       final notifier = container.read(breathingControllerProvider.notifier);
       notifier.startAlternateNostril(
         inhaleSeconds: 2,
-        holdSeconds: 2,
+        holdSeconds: 3,
         exhaleSeconds: 2,
         cycles: 20,
       );
@@ -142,8 +137,8 @@ void main() {
       );
 
       async.elapse(
-        const Duration(seconds: 6),
-      ); // inhale+hold+exhale (left half)
+        const Duration(seconds: 7),
+      ); // inhale 2 + hold 3 + exhale 2 (left half)
 
       expect(
         container.read(breathingControllerProvider).currentPhase.nostril,
@@ -288,7 +283,6 @@ void main() {
 
       expect(audio.bellPlayCount, 0);
       expect(audio.gongPlayCount, 0);
-      expect(audio.breathCuePlayCount, 0);
     });
   });
 }

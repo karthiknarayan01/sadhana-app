@@ -33,6 +33,11 @@ class BreathingCycleLogic {
   /// physiological limit.
   static int clampPhaseSeconds(int seconds) => seconds.clamp(2, 20);
 
+  /// Alternate nostril's hold has its own floor of 3s: every phase rings
+  /// the bell, and a 2s hold would put three bells almost on top of each
+  /// other.
+  static int clampHoldSeconds(int seconds) => seconds.clamp(3, 20);
+
   /// How many full cycles the user may ask for — 1 to 30, enough range for
   /// a one-minute reset or a long session without an unbounded input.
   static int clampCycles(int cycles) => cycles.clamp(1, 30);

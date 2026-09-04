@@ -17,6 +17,21 @@ void main() {
     });
   });
 
+  group('clampHoldSeconds', () {
+    test('floors the hold at 3s', () {
+      expect(BreathingCycleLogic.clampHoldSeconds(2), 3);
+      expect(BreathingCycleLogic.clampHoldSeconds(0), 3);
+    });
+
+    test('clamps above the ceiling', () {
+      expect(BreathingCycleLogic.clampHoldSeconds(99), 20);
+    });
+
+    test('leaves an in-range value untouched', () {
+      expect(BreathingCycleLogic.clampHoldSeconds(6), 6);
+    });
+  });
+
   group('clampCycles', () {
     test('clamps to at least 1', () {
       expect(BreathingCycleLogic.clampCycles(0), 1);

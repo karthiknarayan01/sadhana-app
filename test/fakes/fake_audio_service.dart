@@ -7,8 +7,6 @@ class FakeAudioService implements AudioService {
   int bellPlayCount = 0;
   bool? lastBellLong;
   int gongPlayCount = 0;
-  int breathCuePlayCount = 0;
-  final List<BreathCue> breathCues = [];
   bool configured = false;
 
   @override
@@ -26,13 +24,6 @@ class FakeAudioService implements AudioService {
   @override
   Future<void> playGong({required bool muted}) async {
     if (!muted) gongPlayCount++;
-  }
-
-  @override
-  Future<void> playBreathCue(BreathCue cue, {required bool muted}) async {
-    if (muted) return;
-    breathCuePlayCount++;
-    breathCues.add(cue);
   }
 
   @override

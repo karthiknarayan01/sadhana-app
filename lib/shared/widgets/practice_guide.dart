@@ -34,9 +34,9 @@ class PracticeGuide extends StatelessWidget {
     'alt_nostril_breathing': (
       title: 'How to practice',
       lines: [
-        'Practise with your eyes closed and let the sound guide you: a '
-            'rising tone means breathe in, a steady tone means hold, a '
-            'falling tone means breathe out.',
+        'A bell marks the start of every step — breathe in, hold, breathe '
+            'out — so you can keep your eyes closed. The screen shows which '
+            'nostril is active if you want to check.',
         'The pattern alternates sides on its own: inhale left, hold, exhale '
             'right, inhale right, hold, exhale left — that is one cycle.',
         'With your right hand, use the thumb to close the right nostril and '
