@@ -35,7 +35,7 @@ def build_signed_ipa
 
   # Snapshot the project file verbatim so the manual-signing edits below
   # leave zero residue in git afterwards.
-  pbxproj = "Runner.xcodeproj/project.pbxproj"
+  pbxproj = File.expand_path("../Runner.xcodeproj/project.pbxproj", __dir__)
   pbxproj_original = File.read(pbxproj)
 
   begin
