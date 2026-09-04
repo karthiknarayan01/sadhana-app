@@ -30,8 +30,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   Timer? _hideTimer;
 
   static const _hMargin = 26.0;
-  static const _topGap = 14.0; // below the safe-area inset
-  static const _bottomGap = 30.0; // above the safe-area inset
+  static const _topGap = 44.0; // clears the (overlaid) close button
+  static const _bottomGap = 52.0; // clears the (overlaid) page position
 
   _ReaderLayout? _layoutCache;
   String? _layoutCacheKey;
