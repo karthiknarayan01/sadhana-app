@@ -6,6 +6,7 @@ import 'package:sadhana/core/audio/audio_service.dart';
 class FakeAudioService implements AudioService {
   int bellPlayCount = 0;
   int gongPlayCount = 0;
+  int phaseCuePlayCount = 0;
   bool configured = false;
 
   @override
@@ -21,6 +22,11 @@ class FakeAudioService implements AudioService {
   @override
   Future<void> playGong({required bool muted}) async {
     if (!muted) gongPlayCount++;
+  }
+
+  @override
+  Future<void> playPhaseCue({required bool muted}) async {
+    if (!muted) phaseCuePlayCount++;
   }
 
   @override

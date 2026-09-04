@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
+import '../../../shared/widgets/practice_guide.dart';
 import '../../../shared/widgets/practice_medallion.dart';
 import '../../benefits/presentation/benefit_sheet.dart';
 import '../application/timer_controller.dart';
@@ -59,6 +60,10 @@ class _DurationSetupViewState extends ConsumerState<DurationSetupView> {
             const SizedBox(height: 16),
             const BenefitCard(practiceType: 'meditation')
                 .animate(delay: 150.ms)
+                .fadeIn(duration: 400.ms),
+            const SizedBox(height: 12),
+            const PracticeGuide(practiceType: 'meditation')
+                .animate(delay: 175.ms)
                 .fadeIn(duration: 400.ms),
             const SizedBox(height: 28),
             Text(

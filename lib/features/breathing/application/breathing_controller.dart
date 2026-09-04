@@ -56,7 +56,7 @@ class BreathingController extends Notifier<BreathingState> {
     ),
   );
 
-  /// Starts the warmup countdown, not the practice itself — the gong at
+  /// Starts the warmup countdown, not the practice itself — the bell at
   /// the end of warmup (see _onWarmupTick) is what actually marks practice
   /// beginning, matching the same cue used by meditation's warmup.
   void _startWarmup(BreathingPattern pattern) {
@@ -78,7 +78,8 @@ class BreathingController extends Notifier<BreathingState> {
     if (remaining <= 0) {
       _warmupTicker?.cancel();
       _warmupTicker = null;
-      await ref.read(audioServiceProvider).playGong(muted: state.muted);
+      // Bell (kangse) opens every practice; the gong closes it (see stop).
+      await ref.read(audioServiceProvider).playBell(muted: state.muted);
       _beginPractice();
       return;
     }
@@ -111,7 +112,16 @@ class BreathingController extends Notifier<BreathingState> {
       completedCycles: state.completedCycles,
     );
     if (result.phaseJustChanged) {
-      ref.read(audioServiceProvider).playBell(muted: state.muted);
+      final audio = ref.read(audioServiceProvider);
+      // Alternate nostril steps through six phases per cycle, some of them
+      // very short (a 2s hold) — a full bell rung that often sounds
+      // cluttered, so it gets the soft phase cue instead. Box breathing's
+      // four equal phases are spaced enough for the bell.
+      if (state.pattern.practiceType == BreathingPattern.alternateNostrilType) {
+        audio.playPhaseCue(muted: state.muted);
+      } else {
+        audio.playBell(muted: state.muted);
+      }
     }
     state = state.copyWith(
       phaseIndex: result.phaseIndex,
@@ -122,7 +132,13 @@ class BreathingController extends Notifier<BreathingState> {
   }
 
   Future<void> stop() async {
+    final wasRunning = state.sessionPhase == BreathingSessionPhase.running;
     _cancelTicker();
+    // Close with the gong — but only if practice actually started (a stop
+    // during the warmup countdown isn't a session to round off).
+    if (wasRunning) {
+      await ref.read(audioServiceProvider).playGong(muted: state.muted);
+    }
     await ref
         .read(databaseProvider)
         .recordSession(

@@ -85,7 +85,9 @@ class TimerController extends Notifier<MeditationState> {
     if (remaining <= 0) {
       _warmupTicker?.cancel();
       _warmupTicker = null;
-      await ref.read(audioServiceProvider).playGong(muted: state.muted);
+      // The bell (kangse) opens the practice; the gong is saved for the
+      // close (see _finish).
+      await ref.read(audioServiceProvider).playBell(muted: state.muted);
       _beginPractice();
       return;
     }

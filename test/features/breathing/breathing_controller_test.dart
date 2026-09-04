@@ -46,11 +46,13 @@ void main() {
         container.read(breathingControllerProvider).sessionPhase,
         BreathingSessionPhase.warmup,
       );
-      expect(audio.gongPlayCount, 0);
+      expect(audio.bellPlayCount, 0);
 
       async.elapse(_warmup);
-      // The gong marks warmup ending and practice actually starting.
-      expect(audio.gongPlayCount, 1);
+      // The bell (kangse) marks warmup ending and practice actually
+      // starting; the gong is held for the close.
+      expect(audio.bellPlayCount, 1);
+      expect(audio.gongPlayCount, 0);
       final state = container.read(breathingControllerProvider);
       expect(state.sessionPhase, BreathingSessionPhase.running);
       expect(state.pattern.practiceType, BreathingPattern.boxBreathingType);
@@ -66,6 +68,7 @@ void main() {
       notifier.cancelWarmup();
       async.elapse(_warmup);
 
+      expect(audio.bellPlayCount, 0);
       expect(audio.gongPlayCount, 0);
       expect(
         container.read(breathingControllerProvider).sessionPhase,
@@ -74,19 +77,41 @@ void main() {
     });
   });
 
-  test('a cue plays on every phase change, and cycles are counted', () {
+  test('box breathing rings the bell on every phase change', () {
     fakeAsync((async) {
       final notifier = container.read(breathingControllerProvider.notifier);
       notifier.startBoxBreathing(2); // 4 phases * 2s = 8s per cycle
       async.elapse(_warmup); // through warmup, into running
+      expect(audio.bellPlayCount, 1); // the opening bell
 
       async.elapse(const Duration(seconds: 16)); // exactly 2 full cycles
 
       final state = container.read(breathingControllerProvider);
       expect(state.completedCycles, 2);
-      // A cue on every phase boundary: 4 phases/cycle * 2 cycles = 8. The
-      // warmup's own gong is tracked separately (gongPlayCount), not here.
-      expect(audio.bellPlayCount, 8);
+      // Opening bell + a bell on every phase boundary (4 phases/cycle * 2
+      // cycles = 8). Box breathing keeps the bell; only alternate nostril
+      // swaps in the soft phase cue.
+      expect(audio.bellPlayCount, 9);
+      expect(audio.phaseCuePlayCount, 0);
+    });
+  });
+
+  test('alternate nostril uses the soft phase cue, not the bell', () {
+    fakeAsync((async) {
+      final notifier = container.read(breathingControllerProvider.notifier);
+      notifier.startAlternateNostril(
+        inhaleSeconds: 2,
+        holdSeconds: 2,
+        exhaleSeconds: 2,
+      ); // 6 phases * 2s = 12s per cycle
+      async.elapse(_warmup);
+      expect(audio.bellPlayCount, 1); // kangse still opens the practice
+      expect(audio.phaseCuePlayCount, 0);
+
+      async.elapse(const Duration(seconds: 24)); // 2 full cycles
+
+      expect(audio.phaseCuePlayCount, 12); // soft cue on all 12 phase changes
+      expect(audio.bellPlayCount, 1); // no further bells
     });
   });
 
@@ -116,18 +141,35 @@ void main() {
     });
   });
 
-  test('stopping records a session and moves to finished', () async {
+  test(
+    'stopping during warmup records a session but plays no closing gong',
+    () async {
+      final notifier = container.read(breathingControllerProvider.notifier);
+      notifier.startBoxBreathing(4);
+      await notifier.stop();
+
+      final state = container.read(breathingControllerProvider);
+      expect(state.sessionPhase, BreathingSessionPhase.finished);
+      expect(audio.gongPlayCount, 0); // practice never actually started
+
+      final sessions = await db.watchAllSessions().first;
+      expect(sessions, hasLength(1));
+      expect(sessions.single.practiceType, BreathingPattern.boxBreathingType);
+      expect(sessions.single.completedNaturally, isTrue);
+    },
+  );
+
+  test('stopping a running practice closes with the gong', () async {
     final notifier = container.read(breathingControllerProvider.notifier);
     notifier.startBoxBreathing(4);
+    for (var i = 0; i < practiceWarmupSeconds; i++) {
+      await notifier.onWarmupTickForTesting();
+    }
     await notifier.stop();
 
-    final state = container.read(breathingControllerProvider);
-    expect(state.sessionPhase, BreathingSessionPhase.finished);
-
+    expect(audio.gongPlayCount, 1);
     final sessions = await db.watchAllSessions().first;
     expect(sessions, hasLength(1));
-    expect(sessions.single.practiceType, BreathingPattern.boxBreathingType);
-    expect(sessions.single.completedNaturally, isTrue);
   });
 
   test('reset returns to idle', () async {
@@ -143,7 +185,7 @@ void main() {
     );
   });
 
-  test('toggleMuted suppresses the phase-change cue and the warmup gong', () {
+  test('toggleMuted suppresses the opening bell and the phase-change cues', () {
     fakeAsync((async) {
       final notifier = container.read(breathingControllerProvider.notifier);
       notifier.toggleMuted();
@@ -154,6 +196,7 @@ void main() {
 
       expect(audio.bellPlayCount, 0);
       expect(audio.gongPlayCount, 0);
+      expect(audio.phaseCuePlayCount, 0);
     });
   });
 }

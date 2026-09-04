@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
+import '../../../shared/widgets/practice_guide.dart';
 import '../../../shared/widgets/practice_medallion.dart';
 import '../../benefits/presentation/benefit_sheet.dart';
 import '../application/breathing_controller.dart';
@@ -97,6 +98,8 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
         const SizedBox(height: 12),
         const BenefitCard(practiceType: BreathingPattern.boxBreathingType),
         const SizedBox(height: 12),
+        const PracticeGuide(practiceType: BreathingPattern.boxBreathingType),
+        const SizedBox(height: 12),
         _SecondsStepper(
           label: 'Seconds per side',
           value: _boxSeconds,
@@ -122,6 +125,10 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
         ),
         const SizedBox(height: 12),
         const BenefitCard(practiceType: BreathingPattern.alternateNostrilType),
+        const SizedBox(height: 12),
+        const PracticeGuide(
+          practiceType: BreathingPattern.alternateNostrilType,
+        ),
         const SizedBox(height: 12),
         _SecondsStepper(
           label: 'Inhale',

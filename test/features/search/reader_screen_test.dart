@@ -29,7 +29,9 @@ Future<void> _open(WidgetTester tester, ShlokaResult result) async {
             body: Center(
               child: ElevatedButton(
                 onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => ReaderScreen(result: result)),
+                  MaterialPageRoute(
+                    builder: (_) => ReaderScreen(result: result),
+                  ),
                 ),
                 child: const Text('open'),
               ),
@@ -52,27 +54,27 @@ int _pageCount(WidgetTester tester) {
   return int.parse(label!.split(' of ').last);
 }
 
-double _chromeOpacity(WidgetTester tester) => tester
-    .widget<AnimatedOpacity>(find.byType(AnimatedOpacity))
-    .opacity;
+double _chromeOpacity(WidgetTester tester) =>
+    tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity;
 
 void main() {
-  testWidgets('a long verse is cut into several pages, none of them scrolling', (
-    tester,
-  ) async {
-    await _open(
-      tester,
-      _result(
-        List.filled(600, 'word').join(' '),
-        meaning: const {'english': 'A short meaning paragraph.'},
-      ),
-    );
+  testWidgets(
+    'a long verse is cut into several pages, none of them scrolling',
+    (tester) async {
+      await _open(
+        tester,
+        _result(
+          List.filled(600, 'word').join(' '),
+          meaning: const {'english': 'A short meaning paragraph.'},
+        ),
+      );
 
-    expect(_pageCount(tester), greaterThan(1));
-    // Continuous-flow pagination should never fall back to a scroll view.
-    expect(find.byType(SingleChildScrollView), findsNothing);
-    expect(find.byType(ListView), findsNothing);
-  });
+      expect(_pageCount(tester), greaterThan(1));
+      // Continuous-flow pagination should never fall back to a scroll view.
+      expect(find.byType(SingleChildScrollView), findsNothing);
+      expect(find.byType(ListView), findsNothing);
+    },
+  );
 
   testWidgets('chrome auto-hides, a tap brings it back, ✕ closes the reader', (
     tester,

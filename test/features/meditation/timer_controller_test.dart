@@ -61,11 +61,13 @@ void main() {
         container.read(timerControllerProvider).phase,
         MeditationPhase.warmup,
       );
-      expect(audio.gongPlayCount, 0);
+      expect(audio.bellPlayCount, 0);
 
       async.elapse(_warmup);
-      // The gong marks warmup ending and practice actually starting.
-      expect(audio.gongPlayCount, 1);
+      // The bell (kangse) marks warmup ending and practice actually
+      // starting; the gong is held back for the close.
+      expect(audio.bellPlayCount, 1);
+      expect(audio.gongPlayCount, 0);
       expect(
         container.read(timerControllerProvider).phase,
         MeditationPhase.running,
@@ -73,23 +75,27 @@ void main() {
     });
   });
 
-  test('cancelWarmup returns to setup without playing the gong or recording anything', () {
-    fakeAsync((async) {
-      final notifier = container.read(timerControllerProvider.notifier);
-      notifier.setPlannedSeconds(180);
-      notifier.start();
+  test(
+    'cancelWarmup returns to setup without playing a cue or recording anything',
+    () {
+      fakeAsync((async) {
+        final notifier = container.read(timerControllerProvider.notifier);
+        notifier.setPlannedSeconds(180);
+        notifier.start();
 
-      async.elapse(const Duration(seconds: 4));
-      notifier.cancelWarmup();
-      async.elapse(_warmup);
+        async.elapse(const Duration(seconds: 4));
+        notifier.cancelWarmup();
+        async.elapse(_warmup);
 
-      expect(audio.gongPlayCount, 0);
-      expect(
-        container.read(timerControllerProvider).phase,
-        MeditationPhase.setup,
-      );
-    });
-  });
+        expect(audio.bellPlayCount, 0);
+        expect(audio.gongPlayCount, 0);
+        expect(
+          container.read(timerControllerProvider).phase,
+          MeditationPhase.setup,
+        );
+      });
+    },
+  );
 
   test('a bell fires once per minute during a session, not on completion', () {
     fakeAsync((async) {
@@ -100,11 +106,11 @@ void main() {
       async.elapse(_warmup); // through warmup, into running
       async.elapse(const Duration(minutes: 3));
 
-      // Bells at minute 1 and minute 2 — not a third at the 3-minute mark,
-      // since that's completion (the gong's moment instead). One more gong
-      // from warmup ending, plus the completion gong.
-      expect(audio.bellPlayCount, 2);
-      expect(audio.gongPlayCount, 2);
+      // One opening bell (warmup ending) + bells at minute 1 and minute 2 —
+      // no third at the 3-minute mark, since that's completion (the gong's
+      // moment instead). The gong plays once, on completion.
+      expect(audio.bellPlayCount, 3);
+      expect(audio.gongPlayCount, 1);
       expect(
         container.read(timerControllerProvider).phase,
         MeditationPhase.finished,
@@ -126,8 +132,9 @@ void main() {
       final state = container.read(timerControllerProvider);
       expect(state.phase, MeditationPhase.finished);
       expect(state.elapsedSeconds, 45);
-      // The warmup gong already played; stopping early adds no second one.
-      expect(audio.gongPlayCount, 1);
+      // The opening bell played; stopping early skips the closing gong.
+      expect(audio.bellPlayCount, 1);
+      expect(audio.gongPlayCount, 0);
     });
   });
 
@@ -171,7 +178,7 @@ void main() {
     });
   });
 
-  test('toggleMuted suppresses the bell and the warmup/completion gongs', () {
+  test('toggleMuted suppresses the opening bell, the per-minute bells and the closing gong', () {
     fakeAsync((async) {
       final notifier = container.read(timerControllerProvider.notifier);
       notifier.setPlannedSeconds(180);
