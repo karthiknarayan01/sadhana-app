@@ -4,6 +4,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/audio/audio_service.dart';
 import '../../../core/providers.dart';
 import '../domain/breathing_cycle_logic.dart';
 import '../domain/breathing_pattern.dart';
@@ -15,11 +16,10 @@ final breathingControllerProvider =
     );
 
 /// Drives one breathing session: idle -> running (looping through
-/// [BreathingPattern]'s phases, playing a soft cue on each phase change) ->
-/// finished (recorded). Unlike meditation there's no target duration —
-/// looping continues until [stop] is called; every stop is treated as a
-/// complete session (there's no "gave up early" concept when there was
-/// never a fixed target to fall short of).
+/// [BreathingPattern]'s phases, cueing each change) -> finished. The
+/// session ends itself once the configured number of cycles complete; the
+/// user can also stop early. Either way it's recorded as a complete
+/// session — there was no fixed target to fall short of.
 class BreathingController extends Notifier<BreathingState> {
   Timer? _ticker;
   Timer? _warmupTicker;
@@ -29,7 +29,7 @@ class BreathingController extends Notifier<BreathingState> {
     ref.onDispose(_cancelTicker);
     final prefs = ref.watch(prefsProvider).valueOrNull;
     return BreathingState.initial(
-      pattern: BreathingPattern.box(4),
+      pattern: BreathingPattern.box(4, cycles: 4),
       muted: prefs?.soundMuted ?? false,
     );
   }
@@ -40,25 +40,30 @@ class BreathingController extends Notifier<BreathingState> {
     ref.read(prefsProvider.future).then((p) => p.setSoundMuted(newMuted));
   }
 
-  void startBoxBreathing(int seconds) => _startWarmup(
-    BreathingPattern.box(BreathingCycleLogic.clampPhaseSeconds(seconds)),
+  void startBoxBreathing(int seconds, {required int cycles}) => _startWarmup(
+    BreathingPattern.box(
+      BreathingCycleLogic.clampPhaseSeconds(seconds),
+      cycles: BreathingCycleLogic.clampCycles(cycles),
+    ),
   );
 
   void startAlternateNostril({
     required int inhaleSeconds,
     required int holdSeconds,
     required int exhaleSeconds,
+    required int cycles,
   }) => _startWarmup(
     BreathingPattern.alternateNostril(
       inhaleSeconds: BreathingCycleLogic.clampPhaseSeconds(inhaleSeconds),
       holdSeconds: BreathingCycleLogic.clampPhaseSeconds(holdSeconds),
       exhaleSeconds: BreathingCycleLogic.clampPhaseSeconds(exhaleSeconds),
+      cycles: BreathingCycleLogic.clampCycles(cycles),
     ),
   );
 
-  /// Starts the warmup countdown, not the practice itself — the bell at
-  /// the end of warmup (see _onWarmupTick) is what actually marks practice
-  /// beginning, matching the same cue used by meditation's warmup.
+  /// Starts the warmup countdown, not the practice itself — the short bell
+  /// at the end of warmup (see _onWarmupTick) is what actually marks
+  /// practice beginning, matching meditation's warmup.
   void _startWarmup(BreathingPattern pattern) {
     state = BreathingState.initial(
       pattern: pattern,
@@ -78,8 +83,16 @@ class BreathingController extends Notifier<BreathingState> {
     if (remaining <= 0) {
       _warmupTicker?.cancel();
       _warmupTicker = null;
-      // Bell (kangse) opens every practice; the gong closes it (see stop).
-      await ref.read(audioServiceProvider).playBell(muted: state.muted);
+      // Box breathing opens on the short bell. Alternate nostril opens on
+      // its inhale cue instead — the first phase is always an inhale, and
+      // the eyes-closed practitioner needs that cue as much as any later
+      // one. The gong closes either practice.
+      final audio = ref.read(audioServiceProvider);
+      if (state.pattern.practiceType == BreathingPattern.alternateNostrilType) {
+        await audio.playBreathCue(BreathCue.inhale, muted: state.muted);
+      } else {
+        await audio.playBell(muted: state.muted);
+      }
       _beginPractice();
       return;
     }
@@ -110,25 +123,49 @@ class BreathingController extends Notifier<BreathingState> {
       phaseIndex: state.phaseIndex,
       elapsedInPhaseSeconds: state.elapsedInPhaseSeconds,
       completedCycles: state.completedCycles,
+      targetCycles: state.pattern.cycles,
     );
-    if (result.phaseJustChanged) {
-      final audio = ref.read(audioServiceProvider);
-      // Alternate nostril steps through six phases per cycle, some of them
-      // very short (a 2s hold) — a full bell rung that often sounds
-      // cluttered, so it gets the soft phase cue instead. Box breathing's
-      // four equal phases are spaced enough for the bell.
-      if (state.pattern.practiceType == BreathingPattern.alternateNostrilType) {
-        audio.playPhaseCue(muted: state.muted);
-      } else {
-        audio.playBell(muted: state.muted);
-      }
-    }
+
     state = state.copyWith(
       phaseIndex: result.phaseIndex,
       elapsedInPhaseSeconds: result.elapsedInPhaseSeconds,
       completedCycles: result.completedCycles,
       totalElapsedSeconds: state.totalElapsedSeconds + 1,
     );
+
+    if (result.sessionComplete) {
+      _finishNaturally();
+      return;
+    }
+    if (result.phaseJustChanged) {
+      _cuePhaseChange(state.currentPhase.type);
+    }
+  }
+
+  void _cuePhaseChange(BreathingPhaseType type) {
+    final audio = ref.read(audioServiceProvider);
+    // Box breathing's four equal phases get the short bell. Alternate
+    // nostril is practised with the eyes closed and its six phases can be
+    // very short, so it's guided by ear instead: a rising tone to breathe
+    // in, a steady one to hold, a falling one to breathe out.
+    if (state.pattern.practiceType == BreathingPattern.alternateNostrilType) {
+      audio.playBreathCue(switch (type) {
+        BreathingPhaseType.inhale => BreathCue.inhale,
+        BreathingPhaseType.hold => BreathCue.hold,
+        BreathingPhaseType.exhale => BreathCue.exhale,
+      }, muted: state.muted);
+    } else {
+      audio.playBell(muted: state.muted);
+    }
+  }
+
+  /// The configured cycles are done — close the session (gong, record,
+  /// finished). Shares the recording path with [stop].
+  Future<void> _finishNaturally() async {
+    _cancelTicker();
+    await ref.read(audioServiceProvider).playGong(muted: state.muted);
+    await _record();
+    state = state.copyWith(sessionPhase: BreathingSessionPhase.finished);
   }
 
   Future<void> stop() async {
@@ -139,18 +176,34 @@ class BreathingController extends Notifier<BreathingState> {
     if (wasRunning) {
       await ref.read(audioServiceProvider).playGong(muted: state.muted);
     }
-    await ref
+    await _record();
+    state = state.copyWith(sessionPhase: BreathingSessionPhase.finished);
+  }
+
+  /// The user navigated away mid-practice (switched tabs). Drop it quietly:
+  /// no gong, no finished screen — stop the timers, count what was done,
+  /// and return to idle so the setup screen is fresh next time.
+  Future<void> abandon() async {
+    final wasRunning = state.sessionPhase == BreathingSessionPhase.running;
+    final wasWarmup = state.sessionPhase == BreathingSessionPhase.warmup;
+    if (!wasRunning && !wasWarmup) return;
+    _cancelTicker();
+    if (wasRunning) await _record();
+    state = BreathingState.initial(pattern: state.pattern, muted: state.muted);
+  }
+
+  Future<void> _record() {
+    return ref
         .read(databaseProvider)
         .recordSession(
           practiceType: state.pattern.practiceType,
           startedAt: clock.now().subtract(
             Duration(seconds: state.totalElapsedSeconds),
           ),
-          plannedSeconds: state.totalElapsedSeconds,
+          plannedSeconds: state.pattern.totalSeconds,
           actualSeconds: state.totalElapsedSeconds,
           completedNaturally: true,
         );
-    state = state.copyWith(sessionPhase: BreathingSessionPhase.finished);
   }
 
   void reset() {

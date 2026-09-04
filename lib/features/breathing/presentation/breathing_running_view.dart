@@ -76,7 +76,8 @@ class BreathingRunningView extends ConsumerWidget {
             ),
           ),
           Text(
-            '${state.completedCycles} cycle${state.completedCycles == 1 ? '' : 's'} complete',
+            'Cycle ${(state.completedCycles + 1).clamp(1, state.pattern.cycles)} '
+            'of ${state.pattern.cycles}',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),

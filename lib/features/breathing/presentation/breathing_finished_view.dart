@@ -40,7 +40,8 @@ class BreathingFinishedView extends ConsumerWidget {
             ).animate(delay: 150.ms).fadeIn(duration: 400.ms),
             const SizedBox(height: 8),
             Text(
-              '${state.completedCycles} cycle${state.completedCycles == 1 ? '' : 's'} · $minutes min',
+              '${state.completedCycles} of ${state.pattern.cycles} '
+              'cycle${state.pattern.cycles == 1 ? '' : 's'} · $minutes min',
               style: Theme.of(context).textTheme.bodyMedium,
             ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
             const SizedBox(height: 32),

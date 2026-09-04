@@ -160,6 +160,45 @@ void main() {
     expect(sessions.single.completedNaturally, isFalse);
   });
 
+  test('abandon (tab switch) stops the timer quietly — no gong', () {
+    fakeAsync((async) {
+      final notifier = container.read(timerControllerProvider.notifier);
+      notifier.setPlannedSeconds(600);
+      notifier.start();
+      async.elapse(_warmup);
+      async.elapse(const Duration(seconds: 40));
+
+      notifier.abandon();
+
+      expect(audio.gongPlayCount, 0); // never gongs on abandon
+      final bells = audio.bellPlayCount; // just the opening bell
+
+      // ticker really stopped: no more bells however long we wait
+      async.elapse(const Duration(minutes: 5));
+      expect(audio.bellPlayCount, bells);
+      expect(audio.gongPlayCount, 0);
+    });
+  });
+
+  test('abandoning a running session persists it as not-completed and returns to setup', () async {
+    final notifier = container.read(timerControllerProvider.notifier);
+    notifier.setPlannedSeconds(300);
+    notifier.start();
+    for (var i = 0; i < practiceWarmupSeconds; i++) {
+      await notifier.onWarmupTickForTesting();
+    }
+    await notifier.abandon();
+
+    expect(
+      container.read(timerControllerProvider).phase,
+      MeditationPhase.setup,
+    );
+    final sessions = await db.watchAllSessions().first;
+    expect(sessions, hasLength(1));
+    expect(sessions.single.practiceType, 'meditation');
+    expect(sessions.single.completedNaturally, isFalse);
+  });
+
   test('reset returns to setup with elapsed time cleared', () {
     fakeAsync((async) {
       final notifier = container.read(timerControllerProvider.notifier);

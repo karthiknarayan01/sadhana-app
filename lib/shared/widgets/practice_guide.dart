@@ -27,18 +27,21 @@ class PracticeGuide extends StatelessWidget {
         'Follow the count on screen. A bell marks each change — inhale, hold, '
             'exhale, hold, all the same length.',
         'Breathe through the nose, smoothly; never strain the holds.',
-        'A gong closes the session when you stop.',
+        'Set how many cycles you want — the gong sounds when they are all '
+            'done, or when you stop.',
       ],
     ),
     'alt_nostril_breathing': (
       title: 'How to practice',
       lines: [
-        'A soft tone marks each step. The screen shows which nostril is '
-            'active.',
-        'With your right hand: close the right nostril, inhale through the '
-            'left. Close the left, exhale through the right. Inhale right, '
-            'then switch and exhale left — that is one round.',
-        'Keep the breath gentle. A gong closes the session when you stop.',
+        'Practise with your eyes closed and let the sound guide you: a '
+            'rising tone means breathe in, a steady tone means hold, a '
+            'falling tone means breathe out.',
+        'The pattern alternates sides on its own: inhale left, hold, exhale '
+            'right, inhale right, hold, exhale left — that is one cycle.',
+        'With your right hand, use the thumb to close the right nostril and '
+            'the ring finger to close the left. Keep the breath gentle.',
+        'The gong sounds when all your cycles are done, or when you stop.',
       ],
     ),
   };

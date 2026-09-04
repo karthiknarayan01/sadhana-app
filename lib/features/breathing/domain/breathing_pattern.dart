@@ -21,22 +21,33 @@ class BreathingPhase {
 }
 
 /// A repeating sequence of phases — box breathing's four equal phases, or
-/// alternate nostril's six-phase, side-switching cycle. Practiced by
-/// looping through [phases] until the user stops; there's no fixed total
-/// duration to pick, unlike meditation (see the spec: only the per-phase
-/// seconds are configurable).
+/// alternate nostril's six-phase, side-switching cycle — practised for a
+/// chosen number of [cycles] (one cycle = one full pass through [phases]).
+/// The session ends itself once that many cycles complete; the user can
+/// still stop early.
 class BreathingPattern {
-  const BreathingPattern({required this.practiceType, required this.phases});
+  const BreathingPattern({
+    required this.practiceType,
+    required this.phases,
+    required this.cycles,
+  });
 
   final String practiceType; // matches Sessions.practiceType in the database
   final List<BreathingPhase> phases;
+  final int cycles;
 
   static const boxBreathingType = 'box_breathing';
   static const alternateNostrilType = 'alt_nostril_breathing';
 
-  factory BreathingPattern.box(int seconds) {
+  /// Seconds to complete every configured cycle — shown on the setup
+  /// screen so the user knows what they're committing to.
+  int get totalSeconds =>
+      cycles * phases.fold<int>(0, (sum, p) => sum + p.seconds);
+
+  factory BreathingPattern.box(int seconds, {required int cycles}) {
     return BreathingPattern(
       practiceType: boxBreathingType,
+      cycles: cycles,
       phases: [
         BreathingPhase(type: BreathingPhaseType.inhale, seconds: seconds),
         BreathingPhase(type: BreathingPhaseType.hold, seconds: seconds),
@@ -54,9 +65,11 @@ class BreathingPattern {
     required int inhaleSeconds,
     required int holdSeconds,
     required int exhaleSeconds,
+    required int cycles,
   }) {
     return BreathingPattern(
       practiceType: alternateNostrilType,
+      cycles: cycles,
       phases: [
         BreathingPhase(
           type: BreathingPhaseType.inhale,

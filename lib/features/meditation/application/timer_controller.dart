@@ -85,9 +85,11 @@ class TimerController extends Notifier<MeditationState> {
     if (remaining <= 0) {
       _warmupTicker?.cancel();
       _warmupTicker = null;
-      // The bell (kangse) opens the practice; the gong is saved for the
+      // The long kangse bell opens the practice; the gong is saved for the
       // close (see _finish).
-      await ref.read(audioServiceProvider).playBell(muted: state.muted);
+      await ref
+          .read(audioServiceProvider)
+          .playBell(muted: state.muted, long: true);
       _beginPractice();
       return;
     }
@@ -133,7 +135,7 @@ class TimerController extends Notifier<MeditationState> {
       elapsedSeconds: elapsed,
       plannedSeconds: state.plannedSeconds,
     )) {
-      ref.read(audioServiceProvider).playBell(muted: state.muted);
+      ref.read(audioServiceProvider).playBell(muted: state.muted, long: true);
     }
     _lastElapsedSeconds = elapsed;
 
@@ -158,6 +160,42 @@ class TimerController extends Notifier<MeditationState> {
         ? 0
         : clock.now().difference(startedAt).inSeconds;
     await _finish(completedNaturally: false, actualSeconds: elapsed);
+  }
+
+  /// The user navigated away mid-practice (switched tabs). Drop it quietly:
+  /// no gong, no finished screen — just stop the timer, count what was
+  /// done, and return to the setup screen so it's fresh next time.
+  Future<void> abandon() async {
+    switch (state.phase) {
+      case MeditationPhase.warmup:
+        cancelWarmup();
+      case MeditationPhase.running:
+        final startedAt = _startedAt;
+        final elapsed = startedAt == null
+            ? 0
+            : clock.now().difference(startedAt).inSeconds;
+        _cancelTicker();
+        _safeWakelock(WakelockPlus.disable);
+        _startedAt = null;
+        _lastElapsedSeconds = 0;
+        await ref
+            .read(databaseProvider)
+            .recordSession(
+              practiceType: 'meditation',
+              startedAt: startedAt ?? clock.now(),
+              plannedSeconds: state.plannedSeconds,
+              actualSeconds: elapsed,
+              completedNaturally: false,
+            );
+        state = state.copyWith(
+          phase: MeditationPhase.setup,
+          elapsedSeconds: 0,
+          warmupSecondsRemaining: practiceWarmupSeconds,
+        );
+      case MeditationPhase.setup:
+      case MeditationPhase.finished:
+        break;
+    }
   }
 
   Future<void> _finish({

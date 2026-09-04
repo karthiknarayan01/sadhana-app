@@ -27,9 +27,19 @@ class TechniquePickerView extends ConsumerStatefulWidget {
 class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
   _Technique? _technique;
   int _boxSeconds = 4;
+  int _boxCycles = 4;
   int _inhaleSeconds = 4;
   int _holdSeconds = 4;
   int _exhaleSeconds = 6;
+  int _altCycles = 4;
+
+  static String _formatDuration(int totalSeconds) {
+    final m = totalSeconds ~/ 60;
+    final s = totalSeconds % 60;
+    if (m == 0) return '${s}s';
+    if (s == 0) return '${m}m';
+    return '${m}m ${s}s';
+  }
 
   @override
   void initState() {
@@ -100,14 +110,25 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
         const SizedBox(height: 12),
         const PracticeGuide(practiceType: BreathingPattern.boxBreathingType),
         const SizedBox(height: 12),
-        _SecondsStepper(
+        _Stepper(
           label: 'Seconds per side',
           value: _boxSeconds,
+          suffix: 's',
           onChanged: (v) => setState(() => _boxSeconds = v),
+          clamp: BreathingCycleLogic.clampPhaseSeconds,
         ),
-        const SizedBox(height: 24),
+        _Stepper(
+          label: 'Cycles',
+          value: _boxCycles,
+          onChanged: (v) => setState(() => _boxCycles = v),
+          clamp: BreathingCycleLogic.clampCycles,
+        ),
+        const SizedBox(height: 8),
+        _DurationLine(seconds: _boxCycles * 4 * _boxSeconds),
+        const SizedBox(height: 20),
         FilledButton(
-          onPressed: () => controller.startBoxBreathing(_boxSeconds),
+          onPressed: () =>
+              controller.startBoxBreathing(_boxSeconds, cycles: _boxCycles),
           child: const Text('Start'),
         ),
       ],
@@ -130,27 +151,46 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
           practiceType: BreathingPattern.alternateNostrilType,
         ),
         const SizedBox(height: 12),
-        _SecondsStepper(
+        _Stepper(
           label: 'Inhale',
           value: _inhaleSeconds,
+          suffix: 's',
           onChanged: (v) => setState(() => _inhaleSeconds = v),
+          clamp: BreathingCycleLogic.clampPhaseSeconds,
         ),
-        _SecondsStepper(
+        _Stepper(
           label: 'Hold',
           value: _holdSeconds,
+          suffix: 's',
           onChanged: (v) => setState(() => _holdSeconds = v),
+          clamp: BreathingCycleLogic.clampPhaseSeconds,
         ),
-        _SecondsStepper(
+        _Stepper(
           label: 'Exhale',
           value: _exhaleSeconds,
+          suffix: 's',
           onChanged: (v) => setState(() => _exhaleSeconds = v),
+          clamp: BreathingCycleLogic.clampPhaseSeconds,
         ),
-        const SizedBox(height: 24),
+        _Stepper(
+          label: 'Cycles',
+          value: _altCycles,
+          onChanged: (v) => setState(() => _altCycles = v),
+          clamp: BreathingCycleLogic.clampCycles,
+        ),
+        const SizedBox(height: 8),
+        _DurationLine(
+          seconds:
+              _altCycles *
+              (2 * _inhaleSeconds + 2 * _holdSeconds + 2 * _exhaleSeconds),
+        ),
+        const SizedBox(height: 20),
         FilledButton(
           onPressed: () => controller.startAlternateNostril(
             inhaleSeconds: _inhaleSeconds,
             holdSeconds: _holdSeconds,
             exhaleSeconds: _exhaleSeconds,
+            cycles: _altCycles,
           ),
           child: const Text('Start'),
         ),
@@ -159,16 +199,20 @@ class _TechniquePickerViewState extends ConsumerState<TechniquePickerView> {
   }
 }
 
-class _SecondsStepper extends StatelessWidget {
-  const _SecondsStepper({
+class _Stepper extends StatelessWidget {
+  const _Stepper({
     required this.label,
     required this.value,
     required this.onChanged,
+    required this.clamp,
+    this.suffix = '',
   });
 
   final String label;
   final int value;
   final ValueChanged<int> onChanged;
+  final int Function(int) clamp;
+  final String suffix;
 
   @override
   Widget build(BuildContext context) {
@@ -187,13 +231,12 @@ class _SecondsStepper extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.remove_circle_outline),
-            onPressed: () =>
-                onChanged(BreathingCycleLogic.clampPhaseSeconds(value - 1)),
+            onPressed: () => onChanged(clamp(value - 1)),
           ),
           SizedBox(
-            width: 32,
+            width: 40,
             child: Text(
-              '${value}s',
+              '$value$suffix',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium
                   ?.copyWith(color: scheme.primary),
@@ -201,11 +244,35 @@ class _SecondsStepper extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
-            onPressed: () =>
-                onChanged(BreathingCycleLogic.clampPhaseSeconds(value + 1)),
+            onPressed: () => onChanged(clamp(value + 1)),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The "≈ 3m 20s" line under the cycles stepper — so the user knows how
+/// long the session they've configured will take.
+class _DurationLine extends StatelessWidget {
+  const _DurationLine({required this.seconds});
+
+  final int seconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.schedule, size: 16, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Text(
+          'About ${_TechniquePickerViewState._formatDuration(seconds)}',
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 }

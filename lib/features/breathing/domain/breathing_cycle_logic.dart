@@ -10,12 +10,18 @@ class BreathingTickResult {
     required this.elapsedInPhaseSeconds,
     required this.completedCycles,
     required this.phaseJustChanged,
+    required this.sessionComplete,
   });
 
   final int phaseIndex;
   final int elapsedInPhaseSeconds;
   final int completedCycles;
   final bool phaseJustChanged;
+
+  /// True on the tick that finishes the last configured cycle — the
+  /// controller closes the session (gong, record, finished) instead of
+  /// looping back to phase 0.
+  final bool sessionComplete;
 }
 
 class BreathingCycleLogic {
@@ -27,16 +33,20 @@ class BreathingCycleLogic {
   /// physiological limit.
   static int clampPhaseSeconds(int seconds) => seconds.clamp(2, 20);
 
-  /// Advances one second within [pattern], given the current phase index,
-  /// how many seconds have elapsed in that phase, and how many full cycles
-  /// have completed so far. Wraps back to phase 0 (incrementing
-  /// completedCycles) once the last phase finishes — there's no end state,
-  /// unlike the meditation timer: breathing loops until the user stops.
+  /// How many full cycles the user may ask for — 1 to 30, enough range for
+  /// a one-minute reset or a long session without an unbounded input.
+  static int clampCycles(int cycles) => cycles.clamp(1, 30);
+
+  /// Advances one second within [pattern]. Wraps back to phase 0
+  /// (incrementing completedCycles) once the last phase finishes; sets
+  /// [BreathingTickResult.sessionComplete] on the tick that finishes the
+  /// [targetCycles]th cycle.
   static BreathingTickResult tick({
     required BreathingPattern pattern,
     required int phaseIndex,
     required int elapsedInPhaseSeconds,
     required int completedCycles,
+    required int targetCycles,
   }) {
     final newElapsed = elapsedInPhaseSeconds + 1;
     final currentPhaseSeconds = pattern.phaseAt(phaseIndex).seconds;
@@ -47,16 +57,19 @@ class BreathingCycleLogic {
         elapsedInPhaseSeconds: newElapsed,
         completedCycles: completedCycles,
         phaseJustChanged: false,
+        sessionComplete: false,
       );
     }
 
     final nextPhaseIndex = (phaseIndex + 1) % pattern.phases.length;
     final wrapped = nextPhaseIndex == 0;
+    final newCompleted = wrapped ? completedCycles + 1 : completedCycles;
     return BreathingTickResult(
       phaseIndex: nextPhaseIndex,
       elapsedInPhaseSeconds: 0,
-      completedCycles: wrapped ? completedCycles + 1 : completedCycles,
+      completedCycles: newCompleted,
       phaseJustChanged: true,
+      sessionComplete: wrapped && newCompleted >= targetCycles,
     );
   }
 }

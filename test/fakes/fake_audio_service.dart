@@ -1,12 +1,14 @@
 import 'package:sadhana/core/audio/audio_service.dart';
 
 /// Records calls instead of touching real platform audio channels (which
-/// don't exist under plain `flutter test`) — lets tests assert "the bell
-/// fired at the right moment" without needing an integration-test device.
+/// don't exist under plain `flutter test`) — lets tests assert "the cue
+/// fired at the right moment" without an integration-test device.
 class FakeAudioService implements AudioService {
   int bellPlayCount = 0;
+  bool? lastBellLong;
   int gongPlayCount = 0;
-  int phaseCuePlayCount = 0;
+  int breathCuePlayCount = 0;
+  final List<BreathCue> breathCues = [];
   bool configured = false;
 
   @override
@@ -15,8 +17,10 @@ class FakeAudioService implements AudioService {
   }
 
   @override
-  Future<void> playBell({required bool muted}) async {
-    if (!muted) bellPlayCount++;
+  Future<void> playBell({required bool muted, bool long = false}) async {
+    if (muted) return;
+    bellPlayCount++;
+    lastBellLong = long;
   }
 
   @override
@@ -25,8 +29,10 @@ class FakeAudioService implements AudioService {
   }
 
   @override
-  Future<void> playPhaseCue({required bool muted}) async {
-    if (!muted) phaseCuePlayCount++;
+  Future<void> playBreathCue(BreathCue cue, {required bool muted}) async {
+    if (muted) return;
+    breathCuePlayCount++;
+    breathCues.add(cue);
   }
 
   @override
