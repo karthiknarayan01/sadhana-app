@@ -15,6 +15,8 @@ class AppPrefs {
 
   static const _keySoundMuted = 'sound_muted';
   static const _keyLastMeditationSeconds = 'last_meditation_seconds';
+  static const _keyPreferredScript = 'preferred_script';
+  static const _keyHasSeenOnboarding = 'has_seen_onboarding';
 
   bool get soundMuted => _prefs.getBool(_keySoundMuted) ?? false;
   Future<void> setSoundMuted(bool value) =>
@@ -26,4 +28,16 @@ class AppPrefs {
       _prefs.getInt(_keyLastMeditationSeconds) ?? 600;
   Future<void> setLastMeditationSeconds(int seconds) =>
       _prefs.setInt(_keyLastMeditationSeconds, seconds);
+
+  // Which language key (matching the backend's per-document language maps,
+  // e.g. "devanagari"/"english") search results and the detail screen
+  // prefer to display — set by the language selector.
+  String get preferredScript =>
+      _prefs.getString(_keyPreferredScript) ?? 'devanagari';
+  Future<void> setPreferredScript(String script) =>
+      _prefs.setString(_keyPreferredScript, script);
+
+  bool get hasSeenOnboarding => _prefs.getBool(_keyHasSeenOnboarding) ?? false;
+  Future<void> setHasSeenOnboarding(bool value) =>
+      _prefs.setBool(_keyHasSeenOnboarding, value);
 }

@@ -44,6 +44,19 @@ flutter analyze
 flutter test
 ```
 
+The search feature needs the backend's URL at build/run time — there's no
+hardcoded default, so a forgotten flag fails loudly instead of silently
+hitting a placeholder:
+
+```
+flutter run --dart-define=SEARCH_API_BASE_URL=https://34-54-97-93.sslip.io
+```
+
+That's the live sadhana-backend deployment (project `sadhana-backend-305666`,
+HTTPS via a free sslip.io domain — see that repo's `infra/terraform/README.md`
+for how it's hosted). Cloud Armor rate-limits it, so it's fine to point at
+directly; there's no API key or auth needed client-side.
+
 `dev` is the default/live branch; `main` only ever advances via a dev → main
 promotion PR (see `.github/workflows/enforce-dev-to-main.yml`).
 

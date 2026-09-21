@@ -1,0 +1,181 @@
+default_platform(:ios)
+
+APP_ID       = "com.karthiknarayan.sadhana"
+TEAM_ID      = "SZZ52CVWK9"
+ASC_KEY_ID   = "GNTD6L3NCP"
+ASC_ISSUER   = "39710609-beac-45ca-ace8-bfc38a525f9a"
+ASC_KEY_PATH = File.expand_path("~/Downloads/AuthKey_GNTD6L3NCP.p8")
+
+KEYCHAIN_NAME = "sadhana-ci.keychain"
+KEYCHAIN_PW   = "sadhana-ci"
+
+def asc_key
+  app_store_connect_api_key(
+    key_id: ASC_KEY_ID,
+    issuer_id: ASC_ISSUER,
+    key_filepath: ASC_KEY_PATH,
+  )
+end
+
+# Create the Apple Distribution cert + App Store provisioning profile (via API
+# key, no Xcode account needed), archive + export a signed App Store IPA, then
+# restore the project to automatic signing and drop the throwaway keychain.
+def build_signed_ipa
+  key = asc_key
+
+  create_keychain(
+    name: KEYCHAIN_NAME,
+    password: KEYCHAIN_PW,
+    default_keychain: false,
+    unlock: true,
+    timeout: 3600,
+    add_to_search_list: true,
+  )
+  keychain_path = File.expand_path("~/Library/Keychains/#{KEYCHAIN_NAME}-db")
+
+  # Snapshot the project file verbatim so the manual-signing edits below
+  # leave zero residue in git afterwards.
+  pbxproj = File.expand_path("../Runner.xcodeproj/project.pbxproj", __dir__)
+  pbxproj_original = File.read(pbxproj)
+
+  begin
+    cert(
+      api_key: key,
+      keychain_path: keychain_path,
+      keychain_password: KEYCHAIN_PW,
+      output_path: "fastlane/build",
+    )
+
+    sigh(
+      api_key: key,
+      app_identifier: APP_ID,
+      output_path: "fastlane/build",
+      filename: "sadhana_appstore.mobileprovision",
+    )
+    profile_name = lane_context[SharedValues::SIGH_NAME]
+
+    # Manual signing on the Runner app target ONLY — the Flutter plugin
+    # Swift-package targets must stay on automatic (they take no profile).
+    update_code_signing_settings(
+      path: "Runner.xcodeproj",
+      use_automatic_signing: false,
+      team_id: TEAM_ID,
+      code_sign_identity: "Apple Distribution",
+      bundle_identifier: APP_ID,
+      profile_name: profile_name,
+      targets: ["Runner"],
+    )
+
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      xcargs: "-allowProvisioningUpdates",
+      export_options: {
+        signingStyle: "manual",
+        teamID: TEAM_ID,
+        provisioningProfiles: { APP_ID => profile_name },
+      },
+      output_directory: "fastlane/build",
+      output_name: "sadhana.ipa",
+      clean: true,
+    )
+  ensure
+    File.write(pbxproj, pbxproj_original)
+    delete_keychain(name: KEYCHAIN_NAME)
+  end
+end
+
+def asc_connect
+  require "spaceship"
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+    key_id: ASC_KEY_ID,
+    issuer_id: ASC_ISSUER,
+    filepath: ASC_KEY_PATH,
+  )
+end
+
+platform :ios do
+  desc "Build a signed App Store IPA (no upload)"
+  lane :build_ipa do
+    build_signed_ipa
+  end
+
+  desc "Print TestFlight build processing status"
+  lane :tf_status do
+    asc_connect
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    builds = Spaceship::ConnectAPI::Build.all(app_id: app.id, limit: 10)
+    if builds.empty?
+      UI.important("No builds visible yet (still ingesting).")
+    else
+      builds.each do |b|
+        UI.message("build #{b.app_version}(#{b.version})  state=#{b.processing_state}  uploaded=#{b.uploaded_date}")
+      end
+    end
+  end
+
+  desc "Create an internal TestFlight group and add the account holder"
+  lane :tf_setup_internal do
+    asc_connect
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+
+    users = Spaceship::ConnectAPI.get_users.to_models
+    holder = users.find { |u| Array(u.roles).include?("ACCOUNT_HOLDER") } || users.first
+    UI.user_error!("Could not determine an App Store Connect user to add") unless holder
+    holder_email = holder.email || holder.username
+    UI.user_error!("Account holder has no email/username on record") if holder_email.to_s.empty?
+    UI.message("Account holder: #{holder_email}")
+
+    groups = Spaceship::ConnectAPI.get_beta_groups(filter: { app: app.id }).to_models
+    internal = groups.find(&:is_internal_group)
+    if internal
+      UI.message("Internal group already exists: #{internal.name}")
+    else
+      # fastlane's create_beta_group sends publicLink* attributes that Apple
+      # rejects for internal groups (fastlane#29556) — POST raw instead.
+      client = Spaceship::ConnectAPI.test_flight_request_client
+      resp = client.post("v1/betaGroups", {
+        data: {
+          type: "betaGroups",
+          attributes: { name: "Internal Testers", isInternalGroup: true, hasAccessToAllBuilds: true },
+          relationships: { app: { data: { type: "apps", id: app.id } } },
+        },
+      })
+      internal = Spaceship::ConnectAPI.get_beta_groups(filter: { app: app.id }).to_models.find(&:is_internal_group)
+      UI.success("Created internal group: #{internal&.name}")
+    end
+
+    client = Spaceship::ConnectAPI.test_flight_request_client
+    first = (holder.username || holder_email).to_s.split(/[\s@.]/).first
+    first = "Tester" if first.to_s.empty?
+    begin
+      client.post("v1/betaTesters", {
+        data: {
+          type: "betaTesters",
+          attributes: { email: holder_email, firstName: first, lastName: "Sadhana" },
+          relationships: { betaGroups: { data: [{ type: "betaGroups", id: internal.id }] } },
+        },
+      })
+      UI.success("Added #{holder_email} to internal group '#{internal.name}'.")
+    rescue Spaceship::UnexpectedResponse => e
+      raise unless e.to_s =~ /already exists|ENTITY_ERROR|conflict/i
+      existing = Spaceship::ConnectAPI.get_beta_testers(filter: { email: holder_email }).to_models.first
+      UI.user_error!("Tester exists but could not be looked up") unless existing
+      client.post("v1/betaGroups/#{internal.id}/relationships/betaTesters", {
+        data: [{ type: "betaTesters", id: existing.id }],
+      })
+      UI.success("Linked existing tester #{holder_email} to internal group '#{internal.name}'.")
+    end
+  end
+
+  desc "Build a signed IPA and upload it to TestFlight / App Store Connect"
+  lane :beta do
+    build_signed_ipa
+    upload_to_testflight(
+      api_key: asc_key,
+      skip_waiting_for_build_processing: true,
+    )
+  end
+end

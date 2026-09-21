@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+
+import 'connection/connection.dart' as connection;
 
 part 'database.g.dart';
 
@@ -39,7 +36,7 @@ class UnlockedMilestones extends Table {
 
 @DriftDatabase(tables: [Sessions, UnlockedMilestones])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(connection.openConnection());
 
   AppDatabase.forTesting(super.executor);
 
@@ -84,12 +81,22 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
   }
-}
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'sadhana.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
+  Future<Set<String>> unlockedMilestoneIds() async {
+    final rows = await select(unlockedMilestones).get();
+    return rows.map((r) => r.milestoneId).toSet();
+  }
+
+  /// Upsert rather than a plain insert — an unlock is idempotent by design
+  /// (see UnlockedMilestones' own docstring), so a caller that somehow
+  /// evaluates the same not-yet-unlocked milestone twice in quick
+  /// succession doesn't throw on the primary-key collision.
+  Future<void> unlockMilestone(String milestoneId, DateTime unlockedAt) {
+    return into(unlockedMilestones).insertOnConflictUpdate(
+      UnlockedMilestonesCompanion.insert(
+        milestoneId: milestoneId,
+        unlockedAt: unlockedAt,
+      ),
+    );
+  }
 }

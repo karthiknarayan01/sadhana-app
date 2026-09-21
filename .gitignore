@@ -50,3 +50,16 @@ app.*.map.json
 # drift/build_runner generated code — CI regenerates it (see ci.yml), so it's
 # not committed.
 *.g.dart
+
+# Debug-only metadata from compiling web/drift_worker.dart (see that file's
+# own comment) — web/drift_worker.js itself IS committed, since regenerating
+# it needs a `dart compile js` step nothing currently automates.
+web/drift_worker.js.deps
+web/drift_worker.js.map
+
+# fastlane
+ios/fastlane/report.xml
+ios/fastlane/build/
+ios/fastlane/Preview.html
+ios/fastlane/test_output/
+screenshots/
