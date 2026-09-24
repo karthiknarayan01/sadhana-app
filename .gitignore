@@ -62,4 +62,4 @@ ios/fastlane/report.xml
 ios/fastlane/build/
 ios/fastlane/Preview.html
 ios/fastlane/test_output/
-screenshots/
+ios/fastlane/screenshots/
