@@ -1,6 +1,6 @@
 # Sadhana
 
-![Demo](screenshots/demo.gif)
+<video src="https://raw.githubusercontent.com/karthiknarayan01/sadhana-app/dev/screenshots/demo.mp4" controls width="360"></video>
 
 A Flutter app (Android + iOS, one codebase) with three features:
 
