@@ -1,5 +1,7 @@
 # Sadhana
 
+![Demo](screenshots/demo.gif)
+
 A Flutter app (Android + iOS, one codebase) with three features:
 
 - **Meditation** — a simple, Insight Timer–style practice timer. Pick a
